@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hold'em Trainer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap');
+  :root{
+    --bg:#0c1f15; --panel:#153724; --panel-line:rgba(217,197,140,0.18);
+    --gold:#c9a227; --gold-bright:#e8c14f; --cream:#f1e9d8; --cream-dim:#c9c2ac;
+    --red:#a13d2c;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(232,193,79,0.07), transparent 60%),
+      var(--bg);
+    color:var(--cream); font-family:'Inter',sans-serif;
+    padding:24px;
+  }
+  .wrap{max-width:640px; text-align:center;}
+
+  /* ---- exact copy of the in-app header logo, for visual consistency across the series ---- */
+  .brand{display:inline-flex; align-items:center; gap:14px; text-decoration:none; color:inherit; margin-bottom:8px;}
+  .hdr-fan{position:relative; flex:0 0 auto; width:74px; height:74px; transform:rotate(-20deg);}
+  .hdr-fan .court{position:absolute; left:12%; top:6%; width:42px; height:59px; border-radius:5px;}
+  .hdr-fan .court.a{transform:rotate(9deg) translateX(12%); z-index:2;}
+  .hdr-fan .court.b{transform:rotate(-21deg) translateX(-34%);}
+  .court{
+    position:relative; flex:0 0 auto; overflow:hidden;
+    background:linear-gradient(158deg,#fffdf7,#f1e9d5);
+    box-shadow:0 8px 20px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(0,0,0,0.16);
+    color:#1c1c1c; transform-origin:82% 100%;
+  }
+  .court.red{color:var(--red);}
+  .court::before{
+    content:''; position:absolute; inset:8%; border:1.5px solid currentColor;
+    opacity:0.4; border-radius:2px;
+  }
+  .court .ix{
+    position:absolute; top:5%; left:8%; display:flex; flex-direction:column;
+    align-items:center; line-height:0.82; font-family:'Playfair Display', serif;
+    font-weight:700; letter-spacing:-0.02em; font-size:13px;
+  }
+  .court .ix .su{font-size:0.76em;}
+  .court .pip{
+    position:absolute; left:50%; top:52%; transform:translate(-50%,-50%);
+    line-height:1; font-size:23px;
+  }
+  .hdr-word{display:flex; flex-direction:column; align-items:flex-start;}
+  h1.hdr-name{
+    font-family:'Playfair Display', serif; font-weight:900; font-size:2.1rem;
+    line-height:1; letter-spacing:-0.015em; color:var(--cream); margin:0;
+  }
+  h1.hdr-name > span:first-child{color:var(--gold-bright);}
+  .hdr-sub{
+    font-family:'JetBrains Mono', monospace; font-size:0.68rem; letter-spacing:0.34em;
+    text-transform:uppercase; color:rgba(233,215,160,0.7); margin-top:8px;
+  }
+  /* ---- end ported header logo ---- */
+
+  .tagline{font-size:0.78rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--cream-dim); margin:20px 0 28px;}
+  .pitch{font-size:1.05rem; line-height:1.65; color:var(--cream); margin-bottom:36px;}
+  .pitch b{color:var(--gold-bright); font-weight:600;}
+  .actions{display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin-bottom:20px;}
+  .btn{
+    display:inline-flex; align-items:center; gap:10px; font-family:'Inter',sans-serif;
+    font-size:1rem; font-weight:600; text-decoration:none; padding:16px 30px;
+    border-radius:14px; transition:0.15s; border:1px solid var(--panel-line);
+  }
+  .btn.primary{background:var(--gold); color:#20200c; border-color:var(--gold-bright);}
+  .btn.primary:hover{background:var(--gold-bright); transform:translateY(-1px);}
+  .btn.secondary{background:var(--panel); color:var(--cream);}
+  .btn.secondary:hover{border-color:var(--gold); color:var(--gold-bright);}
+  .skills{
+    display:flex; gap:10px; justify-content:center; flex-wrap:wrap;
+    margin-top:8px; font-size:0.78rem; color:var(--cream-dim);
+  }
+  .skills span{background:var(--panel); border:1px solid var(--panel-line); border-radius:20px; padding:6px 14px;}
+  .series-note{margin-top:32px; font-size:0.74rem; color:var(--cream-dim); line-height:1.6;}
+  .series-note a{color:var(--gold-bright); text-decoration:none;}
+  .series-note a:hover{text-decoration:underline;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="brand">
+    <span class="hdr-fan" aria-hidden="true">
+      <span class="court a"><span class="ix">A<span class="su">&#9824;</span></span><span class="pip">&#9824;</span></span>
+      <span class="court b red"><span class="ix">K<span class="su">&#9829;</span></span><span class="pip">&#9829;</span></span>
+    </span>
+    <span class="hdr-word">
+      <h1 class="hdr-name">Hold<span>'em</span></h1>
+      <span class="hdr-sub">Probability &amp; Bluffing Trainer</span>
+    </span>
+  </span>
+  <div class="tagline">A full-stakes Texas Hold'em trainer</div>
+  <p class="pitch">Learn to play real casino Hold'em the way a serious player actually does — <b>pot odds</b>, <b>position</b>, <b>range reading</b>, and <b>balanced bluffing</b>, against AI that plays real ranges and real equity, not scripted patterns. Then take it into <b>Tournaments</b>, a full <b>Career</b> with real stakes, and every major casino variant: <b>Pot-Limit</b>, <b>Limit</b>, and <b>Short-Deck (6+)</b>.</p>
+  <div class="actions">
+    <a class="btn primary" href="./holdem-trainer.html">🃏 Play the Trainer</a>
+    <a class="btn secondary" href="./Holdem-trainer-manual.html">📖 Read the Manual</a>
+  </div>
+  <div class="skills">
+    <span>Pot Odds &amp; Equity</span>
+    <span>Preflop Position</span>
+    <span>Range Reading</span>
+    <span>Bet Sizing &amp; Bluffing</span>
+    <span>Tournaments &amp; Career</span>
+    <span>Hold'em Variants</span>
+  </div>
+  <div class="series-note">Part of a small series of casino card-game trainers — if you came from the Blackjack Counting Trainer, the theme, conventions, and testing discipline carry over on purpose.</div>
+</div>
+</body>
+</html>

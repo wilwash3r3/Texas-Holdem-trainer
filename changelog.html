@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hold'em Trainer — Changelog</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap');
+  :root{
+    --bg:#0c1f15; --panel:#153724; --panel-2:#1c422b; --panel-line:rgba(217,197,140,0.18);
+    --gold:#c9a227; --gold-bright:#e8c14f; --cream:#f1e9d8; --cream-dim:#c9c2ac; --red:#a13d2c;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; font-family:'Inter',sans-serif; color:var(--cream);
+    background:
+      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(232,193,79,0.07), transparent 60%),
+      var(--bg);
+    padding:32px 20px 60px;
+  }
+  .wrap{max-width:760px; margin:0 auto;}
+  .brand{display:flex; align-items:center; gap:14px; text-decoration:none; color:inherit; margin-bottom:8px;}
+  .hdr-fan{position:relative; flex:0 0 auto; width:60px; height:60px; transform:rotate(-20deg);}
+  .court{
+    position:relative; flex:0 0 auto; overflow:hidden;
+    background:linear-gradient(158deg,#fffdf7,#f1e9d5);
+    box-shadow:0 8px 18px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(0,0,0,0.16);
+    color:#1c1c1c; transform-origin:82% 100%;
+  }
+  .hdr-fan .court{position:absolute; left:12%; top:6%; width:34px; height:48px; border-radius:5px;}
+  .hdr-fan .court.a{transform:rotate(9deg) translateX(12%); z-index:2;}
+  .hdr-fan .court.b{transform:rotate(-21deg) translateX(-34%);}
+  .court.red{color:var(--red);}
+  .court::before{content:''; position:absolute; inset:8%; border:1.5px solid currentColor; opacity:0.4; border-radius:2px;}
+  .court .ix{position:absolute; top:5%; left:8%; display:flex; flex-direction:column; align-items:center; line-height:0.82; font-family:'Playfair Display',serif; font-weight:700; letter-spacing:-0.02em; font-size:10px;}
+  .court .ix .su{font-size:0.76em;}
+  .court .pip{position:absolute; left:50%; top:52%; transform:translate(-50%,-50%); line-height:1; font-size:17px;}
+  h1.hdr-name{font-family:'Playfair Display',serif; font-weight:900; font-size:1.9rem; line-height:1; letter-spacing:-0.015em; color:var(--cream); margin:0;}
+  h1.hdr-name > span:first-child{color:var(--gold-bright);}
+  .hdr-sub{font-family:'JetBrains Mono',monospace; font-size:0.64rem; letter-spacing:0.3em; text-transform:uppercase; color:rgba(233,215,160,0.7); margin-top:6px;}
+  .page-title{font-family:'Playfair Display',serif; font-size:1.5rem; color:var(--gold-bright); margin:28px 0 4px;}
+  .page-sub{color:var(--cream-dim); font-size:0.9rem; margin-bottom:28px;}
+
+  .entry{background:var(--panel); border:1px solid var(--panel-line); border-radius:14px; padding:20px 22px; margin-bottom:16px; position:relative;}
+  .entry.current{border-color:var(--gold-bright); box-shadow:0 0 0 1px var(--gold-bright), 0 10px 26px rgba(232,193,79,0.08);}
+  .entry-head{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:10px;}
+  .ver{font-family:'JetBrains Mono',monospace; font-size:1.05rem; font-weight:700; color:var(--cream);}
+  .entry.current .ver{color:var(--gold-bright);}
+  .badge{font-family:'JetBrains Mono',monospace; font-size:0.66rem; text-transform:uppercase; letter-spacing:0.08em; background:var(--gold); color:#20200c; border-radius:20px; padding:3px 10px; font-weight:700;}
+  .entry p{color:var(--cream-dim); line-height:1.65; font-size:0.92rem; margin:0 0 10px;}
+  .entry p:last-child{margin-bottom:0;}
+  .entry code{background:var(--panel-2); border:1px solid var(--panel-line); border-radius:4px; padding:1px 6px; font-family:'JetBrains Mono',monospace; font-size:0.85em; color:var(--cream);}
+  .entry b{color:var(--cream);}
+  footer{text-align:center; color:var(--cream-dim); font-size:0.78rem; margin-top:36px;}
+  footer a{color:var(--gold-bright);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="brand">
+    <span class="hdr-fan" aria-hidden="true">
+      <span class="court a"><span class="ix">A<span class="su">&#9824;</span></span><span class="pip">&#9824;</span></span>
+      <span class="court b red"><span class="ix">K<span class="su">&#9829;</span></span><span class="pip">&#9829;</span></span>
+    </span>
+    <span>
+      <h1 class="hdr-name">Hold&#39;<span>em</span> Trainer</h1>
+      <div class="hdr-sub">Probability &amp; Bluffing</div>
+    </span>
+  </span>
+
+  <div class="page-title">Changelog</div>
+  <div class="page-sub">Every version, most recent first. Also mirrored in-app under Manual &rarr; Version History.</div>
+
+  <div class="entry current">
+    <div class="entry-head"><span class="ver">v0.7.0</span><span class="badge">Current</span></div>
+    <p>Added atmosphere: a fully synthesized audio layer (Web Audio API, zero external files) with sounds for dealing, betting/calling/raising, folding, winning a pot, and correct/wrong drill answers, plus a new <b>Options</b> tab (master mute, volume slider, Sound Test panel) and a quick-access mute button in the header.</p>
+    <p>The audio functions are hard-guarded to no-op safely whenever <code>window</code>/AudioContext isn't available, so they could be wired directly into engine logic (dealing, betting, showdown) without risk to the test suite &mdash; verified by rerunning the full 120,000-hand chip-conservation regression with those hooks active throughout.</p>
+  </div>
+
+  <div class="entry">
+    <div class="entry-head"><span class="ver">v0.6.0</span></div>
+    <p>Fleshed out three mechanics flagged as known limitations, before touching audio/atmosphere:</p>
+    <p><b>Facing A Raise</b> (Preflop Position) &mdash; a new 3-Bet/Call/Fold chart and drill using a constant top-5% value-3-bet zone plus each seat's own opening frequency as its continuing range.</p>
+    <p><b>Board-card blockers</b> (Range Reading) &mdash; the explorer and drill now deal a flop/turn/river and count combos against hole cards <i>and</i> the board together.</p>
+    <p><b>Semi-bluff equity</b> (Bet Sizing &amp; Bluffing) &mdash; generalized the bluff-frequency formula to bluffs that keep some equity when called (e.g. a flush draw); verified to reduce exactly to the original pure-bluff formula at 0% equity, and to always require a <i>higher</i> bluff frequency as that equity rises.</p>
+    <p>All three verified with dedicated test suites (partition/monotonicity/reference-value checks) plus a 120,000-hand full regression confirming the core engine was untouched.</p>
+  </div>
+
+  <div class="entry">
+    <div class="entry-head"><span class="ver">v0.5.0</span></div>
+    <p>Added the <b>Stats</b> tab: aggregate accuracy across all five drills, plus a Play-mode session panel (hands played, win rate, net chips, showdown win rate, biggest pot won). Play-mode win/showdown tracking is computed directly inside the same showdown-resolution code already covered by the chip-conservation regression suite, so it shares that correctness guarantee rather than being a separate bolt-on counter.</p>
+  </div>
+
+  <div class="entry">
+    <div class="entry-head"><span class="ver">v0.4.0</span></div>
+    <p>Added the <b>Bet Sizing &amp; Bluffing</b> tab (balanced bluff frequency / bluff-to-value ratio calculator, reference table across standard bet sizes, and a Combo Balance drill) &mdash; all five original skill areas now fully built out. Also added a <b>Study Glossary</b> view to the Terminology tab, since the quiz-only version gave no way to learn terms before being tested on them; Terminology now opens in glossary view by default.</p>
+    <p>Tested: bluff-frequency/ratio formulas against known reference values (100%-pot bet = 33.3% freq / 2:1 ratio, 50%-pot bet = 25% freq / 3:1 ratio), and confirmed the formula's dependence on bet-to-pot ratio only, not absolute pot size.</p>
+  </div>
+
+  <div class="entry">
+    <div class="entry-head"><span class="ver">v0.3.1</span><span class="badge" style="background:var(--red); color:#fff;">Bug fix</span></div>
+    <p>Found (via 24,000-hand regression testing) a rare side-pot edge case where a short-stacked blind posting less than the configured blind size could create a pot layer with zero eligible winners, silently deleting that money from the table. Fixed at the root (currentBet now reflects the actual posted blind amount) and added a safety-net refund so an uncontested layer always returns to whoever contributed it instead of vanishing.</p>
+    <p>Verified with 360,000 simulated hands using per-action invariant checking across all three table formats &mdash; zero failures.</p>
+  </div>
+
+  <div class="entry">
+    <div class="entry-head"><span class="ver">v0.3.0</span></div>
+    <p>Added the <b>Range Reading</b> tab: an explorer showing a seat's opening range with live combo counts as your hole cards block specific combinations, plus a Combo Counting drill. Reuses the Chen-ranked hand types from Preflop Position.</p>
+  </div>
+
+  <div class="entry">
+    <div class="entry-head"><span class="ver">v0.2.0</span></div>
+    <p>Added the <b>Preflop Position</b> tab: opening-range charts for Heads-Up / 6-Max / 9-Max built from the Chen Formula, plus a Raise/Fold drill against those charts.</p>
+  </div>
+
+  <div class="entry">
+    <div class="entry-head"><span class="ver">v0.1.0-skeleton</span></div>
+    <p>Initial skeleton. All tabs present. Play mode fully functional (configurable Heads-Up/6-Max/9-Max, full betting engine with side pots, 4 AI personalities). Terminology and Pot Odds &amp; Equity drills fully functional. Theme ported from the Blackjack Counting Trainer.</p>
+    <p>Caught and fixed a real bug during testing where a busted player's stale chip contribution leaked into the next hand's side-pot math; verified the fix with 36,000 simulated hands with zero chip-conservation errors.</p>
+  </div>
+
+  <footer>Hold'em Trainer &middot; built for learning probability, ranges, and bluffing at the table.</footer>
+</div>
+</body>
+</html>

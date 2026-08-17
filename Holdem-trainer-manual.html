@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hold'em Trainer — Manual</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap');
+  :root{
+    --bg:#0c1f15; --panel:#153724; --panel-line:rgba(217,197,140,0.18);
+    --gold:#c9a227; --gold-bright:#e8c14f; --cream:#f1e9d8; --cream-dim:#c9c2ac;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; padding:0; background:
+      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(232,193,79,0.06), transparent 60%),
+      var(--bg);
+    color:var(--cream); font-family:'Inter',sans-serif; line-height:1.6;
+  }
+  .wrap{max-width:820px; margin:0 auto; padding:40px 24px 80px;}
+  header{display:flex; align-items:center; margin-bottom:8px; padding-bottom:24px; border-bottom:1px solid var(--panel-line);}
+
+  /* ---- exact copy of the in-app header logo / landing-page logo ---- */
+  .brand{display:inline-flex; align-items:center; gap:14px;}
+  .hdr-fan{position:relative; flex:0 0 auto; width:64px; height:64px; transform:rotate(-20deg);}
+  .hdr-fan .court{position:absolute; left:12%; top:6%; width:36px; height:51px; border-radius:5px;}
+  .hdr-fan .court.a{transform:rotate(9deg) translateX(12%); z-index:2;}
+  .hdr-fan .court.b{transform:rotate(-21deg) translateX(-34%);}
+  .court{
+    position:relative; flex:0 0 auto; overflow:hidden;
+    background:linear-gradient(158deg,#fffdf7,#f1e9d5);
+    box-shadow:0 8px 20px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(0,0,0,0.16);
+    color:#1c1c1c; transform-origin:82% 100%;
+  }
+  .court.red{color:#a13d2c;}
+  .court::before{
+    content:''; position:absolute; inset:8%; border:1.5px solid currentColor;
+    opacity:0.4; border-radius:2px;
+  }
+  .court .ix{
+    position:absolute; top:5%; left:8%; display:flex; flex-direction:column;
+    align-items:center; line-height:0.82; font-family:'Playfair Display', serif;
+    font-weight:700; letter-spacing:-0.02em; font-size:11px;
+  }
+  .court .ix .su{font-size:0.76em;}
+  .court .pip{
+    position:absolute; left:50%; top:52%; transform:translate(-50%,-50%);
+    line-height:1; font-size:20px;
+  }
+  .hdr-word{display:flex; flex-direction:column;}
+  h1.hdr-name{
+    font-family:'Playfair Display', serif; font-weight:900; font-size:1.9rem;
+    line-height:1; letter-spacing:-0.015em; color:var(--cream); margin:0;
+  }
+  h1.hdr-name > span:first-child{color:var(--gold-bright);}
+  .hdr-sub{
+    font-family:'JetBrains Mono', monospace; font-size:0.6rem; letter-spacing:0.32em;
+    text-transform:uppercase; color:rgba(233,215,160,0.7); margin-top:6px;
+  }
+  /* ---- end ported header logo ---- */
+
+  .back-link{display:inline-block; margin:20px 0 0; font-size:0.85rem; color:var(--gold-bright); text-decoration:none; border:1px solid var(--panel-line); padding:8px 16px; border-radius:10px; transition:0.15s;}
+  .back-link:hover{background:var(--panel); border-color:var(--gold);}
+  details.manual-section{
+    background:var(--panel); border:1px solid var(--panel-line); border-radius:14px;
+    padding:18px 22px; margin:14px 0;
+  }
+  summary{
+    font-family:'Inter',sans-serif; font-size:1rem; text-transform:uppercase; letter-spacing:0.08em;
+    color:var(--gold-bright); font-weight:700; cursor:pointer; list-style:none; outline:none;
+  }
+  summary::-webkit-details-marker{display:none;}
+  summary::before{content:'▶ '; font-size:0.75em;}
+  details[open] summary::before{content:'▼ ';}
+  details[open] summary{margin-bottom:12px;}
+  p{margin:0 0 12px; color:var(--cream); font-size:0.96rem;}
+  p:last-child{margin-bottom:0;}
+  b{color:var(--cream); font-weight:600;}
+  i{color:var(--cream-dim);}
+  a{color:var(--gold-bright);}
+  a:hover{color:var(--gold);}
+  code{background:rgba(0,0,0,0.3); padding:1px 6px; border-radius:4px; font-size:0.88em;}
+  ul{margin:0 0 12px; padding-left:22px; color:var(--cream);}
+  li{margin-bottom:6px;}
+  .footer-note{margin-top:32px; padding-top:20px; border-top:1px solid var(--panel-line); font-size:0.8rem; color:var(--cream-dim); text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="brand">
+      <span class="hdr-fan" aria-hidden="true">
+        <span class="court a"><span class="ix">A<span class="su">&#9824;</span></span><span class="pip">&#9824;</span></span>
+        <span class="court b red"><span class="ix">K<span class="su">&#9829;</span></span><span class="pip">&#9829;</span></span>
+      </span>
+      <span class="hdr-word">
+        <h1 class="hdr-name">Hold<span>'em</span> Trainer</h1>
+        <span class="hdr-sub">Manual</span>
+      </span>
+    </span>
+  </header>
+  <a class="back-link" href="./index.html">&larr; Open the trainer</a>
+
+  <details class="manual-section" open>
+    <summary>🎓 What This Trains</summary>
+    <p>This is a Texas Hold'em trainer built around the mechanics real players actually rely on: pot odds and equity, position-based hand selection, range reading (thinking in terms of an opponent's whole range of hands rather than guessing one hand), and balanced bet sizing — betting and bluffing in proportions an opponent can't simply exploit. It plays out against AI that reasons about real position-based ranges and live equity, not a fixed script, across cash games, tournaments, a full Career mode with real financial stakes, and every major casino variant of the game.</p>
+  </details>
+
+  <details class="manual-section">
+    <summary>🃏 How to Play</summary>
+    <p>Play mode is a standard Texas Hold'em table — pick a seat count (Heads-Up, 6-Max, or Full Ring), a starting stack, blinds, an AI difficulty, and a betting structure. Deal a hand, and act on your turn using Fold, Check/Call, and sizing buttons that adapt to whichever betting structure you picked. A hand plays out through Preflop, Flop, Turn, River, and Showdown exactly like a real table, with side pots handled correctly whenever a player goes all-in for less than a full bet.</p>
+    <p>Two AI difficulties are available. <b>Standard</b> uses a simplified hand-strength heuristic with four table personalities (tight, loose, aggressive, balanced). <b>Hard</b> plays a real Chen-ranked opening range by seat position, an opener-aware 3-betting range, a defend-width-based Big Blind, and live Monte Carlo equity compared against actual pot odds postflop — genuinely tougher, not just "more aggressive."</p>
+  </details>
+
+  <details class="manual-section">
+    <summary>🎯 Pot Odds &amp; Equity</summary>
+    <p>Every scenario in this drill gives you a real pot, a real bet, and a hand at some stage of the board — then asks you to call or fold. The correct answer is computed two ways and compared: the <b>equity you actually need</b> to make calling profitable (from the size of the bet relative to the pot), against your <b>real equity</b> (estimated by simulating thousands of random boards and opponent hands, not guessed). This is the same idea underlying the Fundamental Theorem of Poker — see Further Reading.</p>
+  </details>
+
+  <details class="manual-section">
+    <summary>📍 Preflop Position &amp; Opening Ranges</summary>
+    <p>Every seat at the table opens a different percentage of hands, widening as you act later — because acting last after the flop is a real, durable advantage. Hands are ranked using the <b>Chen Formula</b>, a well-known scoring system for the 169 distinct Hold'em starting hand types (see Further Reading for its actual origin). The <b>Facing A Raise</b> section layers on top of that: a value 3-betting zone that scales with how wide the original raiser's own range is, plus a small, deliberately fixed set of bluff 3-bets (suited wheel aces, suited connectors) chosen for blockers and playability rather than raw strength.</p>
+    <p>Selecting <b>Short-Deck (6+)</b> switches the opening chart to a genuinely different ranking — not a guessed adjustment to Chen's formula, but real simulated equity computed for all 81 short-deck starting hand types in a 36-card game. Facing A Raise isn't available in Short-Deck yet; see Known Limitations in the in-app Manual tab for what that section still lacks.</p>
+  </details>
+
+  <details class="manual-section">
+    <summary>🔍 Range Reading</summary>
+    <p>This tab shows a seat's entire opening range as a live grid, with the exact number of remaining combinations for each hand type shrinking in real time as your own hole cards and the board block them out — holding one Ace yourself, for instance, drops pocket Aces from 6 possible combinations for anyone else down to 3. The Combo Counting drill tests the same skill: given a scenario, how many combinations of a given hand type can still exist.</p>
+  </details>
+
+  <details class="manual-section">
+    <summary>💰 Bet Sizing &amp; Balanced Bluffing</summary>
+    <p>A bet only stays unexploitable if your bluffs and your value bets are mixed in the right proportion for the size you're betting — bet too big with too few bluffs and a good opponent can profitably fold everything; bluff too often and they can profitably call everything. This tab computes that balanced frequency directly from bet size (and, for semi-bluffs that keep some equity when called, from that equity too — a semi-bluff needs to be used <i>more</i> often than a pure bluff at the same price, since it's cheaper for an opponent to call).</p>
+  </details>
+
+  <details class="manual-section">
+    <summary>🏆 Tournaments</summary>
+    <p>Tournament mode is a genuine no-rebuy elimination format: blinds rise on a fixed schedule regardless of stack sizes, busting means you're out, and payouts come from a real prize pool split among the top finishers. <b>Single-Table</b> tournaments run on one table start to finish. <b>Multi-Table</b> tournaments (2 to 8 tables) seat additional AI-only tables in the background, moving players between tables to keep them balanced as the field shrinks, breaking tables early if they empty out, and merging everyone onto one final table once the surviving field fits on it.</p>
+    <p>The trainer's own payout structure and points system are a simplified model for scoring finishes, not true Independent Chip Model (ICM) valuation — see Further Reading for where the real math on tournament equity actually comes from, if you want to go deeper than this trainer's simplified version.</p>
+  </details>
+
+  <details class="manual-section">
+    <summary>💼 Career Mode &amp; The Bankroll Economy</summary>
+    <p>Career mode is a four-tier ladder — Local League, Regional Circuit, National Championship, and The Majors — each one a real tournament under the hood, auto-configured for format, AI difficulty, and betting structure as you climb (No-Limit, then Pot-Limit, then Limit, then Short-Deck, in that order). Placements earn ranking points that promote you to the next tier, and a career bankroll that's genuinely at stake: every entry costs a real buy-in, paid before the event starts, and there's no rebuy. Run your bankroll below what the next tier costs to enter, and your career is over.</p>
+    <p>If you're short, the house may offer you a <b>marker</b> — a real casino term for exactly this kind of house credit — instead of ending things outright: a loan with a real 25% vig and a countdown of tournaments to repay, framed warmly ("everybody needs a cushion now and then"). Miss the deadline and the tone changes entirely: your marker gets called, and you're given a genuine choice between two costly ways to answer it, one of which (taking a dive) is enforced at the mechanical level in your very next event, not just narratively.</p>
+  </details>
+
+  <details class="manual-section">
+    <summary>🎲 Hold'em Variants</summary>
+    <p>Real casinos spread Hold'em under more than one set of rules, and each is a genuine engine difference here, not a cosmetic label:</p>
+    <ul>
+      <li><b>Pot-Limit</b> — every bet and raise is capped at the size of the pot. The standard rule: your maximum raise-to is the pot as you're facing it (already including the bet you're responding to) plus twice the amount you must call.</li>
+      <li><b>Limit</b> — every bet and raise is a fixed size (the "small bet," equal to the big blind, on the preflop and flop; the "big bet," double that, on the turn and river), with a hard cap of 4 total bets per street.</li>
+      <li><b>Short-Deck (6+)</b> — a real 36-card deck (ranks 6 through Ace only), with the one standard ranking change this variant is known for: a Flush beats a Full House, since flushes become meaningfully harder to make and full houses meaningfully easier once the low cards are gone. See Further Reading for where this variant actually comes from.</li>
+    </ul>
+  </details>
+
+  <details class="manual-section">
+    <summary>📊 Stats &amp; Progress</summary>
+    <p>The Stats tab tracks accuracy across every drill, plus a live session panel for Play mode (hands played, win rate, net chips, showdown win rate, biggest pot). Career progress, every drill's score, and your audio preferences are saved automatically to this browser as you play — see Saving &amp; Devices below.</p>
+  </details>
+
+  <details class="manual-section">
+    <summary>🎨 Customization</summary>
+    <p>Options includes purely cosmetic table customization — 5 felt colors and 8 card-back designs — with zero effect on how the game plays. Pick whatever you find easiest to read.</p>
+  </details>
+
+  <details class="manual-section">
+    <summary>💾 Saving &amp; Devices</summary>
+    <p>Career progress, drill scores, and your audio/appearance preferences are saved automatically to this browser using standard web storage, debounced so it doesn't save on every single keystroke. If your browser blocks this (private/incognito mode, or storage disabled entirely), the trainer still works completely normally for the session — it just won't remember anything the next time you open it. This does <i>not</i> cover live mid-hand table state: closing the tab mid-hand won't let you resume that exact hand later.</p>
+  </details>
+
+  <details class="manual-section">
+    <summary>⌨️ Keyboard Shortcuts</summary>
+    <p>Play mode's actions use a number-row-plus-letter dual scheme: <code>1</code>/<code>Z</code> Fold, <code>2</code>/<code>X</code> Check-Call, <code>3</code>/<code>C</code> Half-Pot (or the fixed bet size in Limit), <code>4</code>/<code>V</code> Pot, <code>5</code>/<code>B</code> All-In (or Max Raise in Pot-Limit) — <code>Enter</code>/<code>Space</code> deals or advances to the next hand. Tabs switch with home-row hotkeys: <code>A S D F G H J K L</code>, printed directly on the tab bar. Every drill across every tab also answers to number keys (1-4 for the visible choices) and <code>Enter</code>/<code>Space</code> to advance to the next question.</p>
+  </details>
+
+  <details class="manual-section">
+    <summary>⚙ Options</summary>
+    <p>All sound — effects and background music alike — is synthesized live via the Web Audio API; there are no external audio files anywhere in this trainer. Effects play on real events (dealing, betting, folding, winning, correct/incorrect drill answers). Background music has four themes that switch automatically based on context: a relaxed Lounge theme for normal play, a tighter High Stakes theme when you're short-stacked or at a tournament final table, a warmer Career theme on the Career home screen, and a bright Triumphant theme when you win a tournament. Mute, volume, and music settings are independent and saved automatically.</p>
+  </details>
+
+  <details class="manual-section">
+    <summary>📚 Further Reading</summary>
+    <p>This trainer names specific real techniques and mechanics — the Chen Formula, the Fundamental Theorem of Poker, tournament equity, and the real history of Short-Deck Hold'em. Here's where those actually come from, for anyone who wants to go deeper than a training tool can take you.</p>
+    <p><b>Books:</b></p>
+    <p>David Sklansky, <i>The Theory of Poker</i> (1987) — the source of the Fundamental Theorem of Poker ("every time you play a hand differently from how you would if you could see your opponent's cards, you lose; every time they do the same against you, you gain"), and the foundational explanation of pot odds and implied odds this trainer's Pot Odds &amp; Equity tab builds on directly.</p>
+    <p>Bill Chen, credited formula first published in Lou Krieger's <i>Hold'em Excellence: From Beginner to Winner</i> (2000) — the actual origin of the Chen Formula used throughout Preflop Position. Chen later co-authored <i>The Mathematics of Poker</i> with Jerrod Ankenman, a more advanced quantitative treatment of the game-theoretic ideas (balanced ranges, unexploitability) underneath Bet Sizing &amp; Bluffing.</p>
+    <p>Lee Nelson, Tysen Streib, and Kim Lee, <i>Kill Everyone: Advanced Strategies for No-Limit Hold'em Poker Tournaments and Sit-n-Go's</i> — the source for Independent Chip Model (ICM) tournament-equity theory, the real math this trainer's own tournament payout/points system simplifies rather than fully implements.</p>
+    <p><b>On Short-Deck (6+) Hold'em:</b></p>
+    <p><a href="https://en.wikipedia.org/wiki/Six-plus_hold_%27em" target="_blank" rel="noopener">"Six-plus hold 'em,"</a> Wikipedia — confirms the exact combinatorics this trainer computes independently (630 total starting combinations, 81 distinct starting hand types in a 36-card deck) and the standard ranking change (Flush over Full House).</p>
+    <p><a href="https://www.pokernews.com/poker-rules/six-plus-hold-em.htm" target="_blank" rel="noopener">"Short-Deck Poker: How to Play 6+ Hold'em (Official Rules),"</a> PokerNews — a clear, practical rules reference for the variant as actually spread in casinos.</p>
+    <p>The variant originated in high-stakes cash games in Macau around 2014, popularized by players including Phil Ivey and Tom Dwan, and reached wider prominence through the Triton Poker Super High Roller Series.</p>
+  </details>
+
+  <div class="footer-note">
+    For the full version-by-version change history, open the trainer and check the Manual tab there.
+  </div>
+</div>
+</body>
+</html>
