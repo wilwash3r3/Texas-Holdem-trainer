@@ -266,6 +266,95 @@
     .pcard.lg{width:50px; height:72px;}
     h1.hdr-name{font-size:1.15rem;}
   }
+
+  /* ================= TOUCH INPUT ================= */
+  @media (pointer:coarse){
+    /* keyboard shortcut badges are meaningless on a touch device with no keyboard */
+    .key-badge{display:none;}
+    /* bump every button to a real touch target (44px is the standard accessibility
+       floor on both iOS and Android) — the desktop 10px/18px padding alone falls short */
+    .btn{min-height:44px; padding:12px 18px;}
+    .tab-btn{min-height:40px;}
+    /* hover-only affordances (tooltips, lift-on-hover) don't fire on touch at all, so
+       don't rely on them as the only way to see this content */
+    .info-icon[data-tip]:hover::after, .info-icon[data-tip]:hover::before{display:none;}
+  }
+
+  /* ================= TABLET (portrait iPad-class widths) ================= */
+  @media (max-width:1024px) and (min-width:721px){
+    nav.tabs{gap:4px;}
+    .tab-btn{padding:8px 11px; font-size:0.78rem;}
+    .card-box{padding:16px;}
+    table.ref{font-size:0.78rem;}
+  }
+
+  /* ================= PHONE ================= */
+  @media (max-width:480px){
+    body{padding:0;}
+    main{padding:10px;}
+    header{padding:10px 12px 0;}
+    .hdr-fan{width:44px; height:44px;}
+    h1.hdr-name{font-size:1rem;}
+    .hdr-sub{font-size:0.5rem; letter-spacing:0.2em;}
+    nav.tabs{gap:4px; margin-top:8px;}
+    .tab-btn{padding:7px 10px; font-size:0.74rem; border-radius:8px 8px 0 0;}
+    .tab-btn .soon-badge{display:none;}
+    .card-box{padding:12px 14px; border-radius:10px;}
+    .card-box h2{font-size:1rem;}
+    .muted{font-size:0.82rem;}
+    .pill{font-size:0.7rem; padding:3px 9px;}
+    table.ref{font-size:0.74rem;}
+    table.ref th, table.ref td{padding:5px 4px;}
+    .explain-box{font-size:0.8rem; padding:10px 12px;}
+    .btn{font-size:0.82rem; padding:11px 14px;}
+    .btn-row{gap:8px;}
+
+    /* The poker table: an oval arc of absolutely-positioned seats simply doesn't have
+       room to exist on a phone-width screen — 9 seats around an ellipse at this width
+       either overlap or shrink into unreadable text. Rather than trying to squeeze the
+       same layout smaller, abandon the arc entirely below this width and lay seats out
+       as a plain vertical list instead — the same fix Blackjack's own table uses at
+       this width, for the same reason. Seat positions are set inline by JS (style="left:
+       ...; top:...") so overriding them here requires !important — CSS specificity gives
+       inline styles priority over any selector, including media-query ones, unless
+       marked important. */
+    .table-wrap{aspect-ratio:auto; min-height:0; max-width:100%;}
+    .felt{
+      position:static; inset:auto; border-radius:16px; padding:10px 8px 12px;
+      display:flex; flex-direction:column; gap:6px;
+    }
+    .board-area{position:static; transform:none; margin:0 0 8px;}
+    .seat{
+      position:static !important; left:auto !important; top:auto !important;
+      transform:none !important; width:100% !important;
+      display:flex; align-items:center; justify-content:space-between; gap:8px;
+      text-align:left; padding:6px 10px;
+    }
+    .seat .name{font-size:0.74rem;}
+    .seat .stack{font-size:0.66rem;}
+    .seat .bet-tag{margin-top:0; font-size:0.64rem;}
+    .seat .cards{margin-top:0;}
+    .seat .dealer-btn{position:static; width:16px; height:16px; font-size:0.5rem; margin-left:4px; flex:0 0 auto;}
+    /* the pulsing scale animation was built around the arc's translate(-50%,-50%)
+       centering, which no longer applies in this static layout, and CSS animations can
+       silently override an !important transform on the base rule — disabling the
+       animation outright and using a plain static highlight sidesteps that entirely,
+       rather than fighting the cascade to make the old animation behave here. */
+    .seat.active-turn{animation:none; box-shadow:0 0 0 2px var(--gold-bright), 0 4px 14px rgba(0,0,0,0.4);}
+    .pcard.lg{width:38px; height:54px; font-size:0.7rem; padding:3px;}
+    .pcard.sm{width:30px; height:44px;}
+    .action-bar{padding:10px; gap:6px;}
+    .action-bar .amount{font-size:0.78rem;}
+    .range-grid{max-width:100%;}
+    .stat-grid{grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:8px;}
+  }
+
+  /* ================= SHORT / LANDSCAPE PHONE ================= */
+  @media (max-height:480px) and (max-width:900px){
+    .table-wrap{min-height:0;}
+    .log-box{max-height:70px;}
+    .action-bar{padding:8px;}
+  }
 </style>
 </head>
 <body>
@@ -298,7 +387,7 @@
    Ported visual theme (palette / fonts / card-fan logo) from
    the Blackjack Counting Trainer for brand consistency.
    ========================================================= */
-const APP_VERSION = "v0.35.0";
+const APP_VERSION = "v0.39.0";
 
 /* ---------------- TAB DEFINITIONS ---------------- */
 const TABS = [
@@ -312,6 +401,7 @@ const TABS = [
   {id:'variants', label:"Hold'em Variants", soon:false},
   {id:'image', label:'Table Image', soon:false},
   {id:'test', label:'Skills Test', soon:false},
+  {id:'evcalc', label:'EV & Risk', soon:false},
   {id:'manual', label:'Manual', soon:false},
   {id:'options', label:'Options', soon:false},
 ];
@@ -344,7 +434,7 @@ const state = {
   lifetime: null, // lazily created by newLifetimeState() on first use — survives Career resets
   table: null,     // holdem table game state (Play mode)
   quiz: { score:0, total:0, current:null, answered:false, mode:'glossary' },
-  potodds: { score:0, total:0, current:null, revealed:false, outsDrill:{active:false, question:null, score:0, total:0} },
+  potodds: { score:0, total:0, current:null, revealed:false, outsDrill:{active:false, question:null, score:0, total:0}, pushFoldDrill:{active:false, question:null, score:0, total:0} },
   audio: { muted:false, volume:0.6, ctx:null, music:{enabled:false, volume:0.35, playing:false, theme:'lounge', chordIndex:0, nextNoteTime:0, schedulerHandle:null} },
 };
 
@@ -406,16 +496,21 @@ function collectSaveData(){
       terminology:      { score: state.quiz.score, total: state.quiz.total },
       potOdds:          { score: state.potodds.score, total: state.potodds.total },
       outsRule:         { score: state.potodds.outsDrill.score, total: state.potodds.outsDrill.total },
+      pushFold:         { score: state.potodds.pushFoldDrill.score, total: state.potodds.pushFoldDrill.total },
       preflopPosition:  state.preflop ? { score: state.preflop.drill.score, total: state.preflop.drill.total } : null,
       facingARaise:     state.preflop ? { score: state.preflop.facing.score, total: state.preflop.facing.total } : null,
+      threeBetOrFold:   state.threeBetFoldDrill ? { score: state.threeBetFoldDrill.score, total: state.threeBetFoldDrill.total } : null,
       rangeReading:     state.ranges ? { score: state.ranges.drill.score, total: state.ranges.drill.total } : null,
       betSizing:        state.bluff ? { score: state.bluff.drill.score, total: state.bluff.drill.total } : null,
+      bluffBreakeven:   state.bluff ? { score: state.bluff.breakevenDrill.score, total: state.bluff.breakevenDrill.total } : null,
       maxRaise:         state.variants ? { score: state.variants.drill.score, total: state.variants.drill.total } : null,
       betSize:          state.variants ? { score: state.variants.sizeDrill.score, total: state.variants.sizeDrill.total } : null,
       shortDeckRanking: state.variants ? { score: state.variants.rankingDrill.score, total: state.variants.rankingDrill.total } : null,
       exploits:         state.image ? { score: state.image.drill.score, total: state.image.drill.total } : null,
     },
     skillsTest: state.skillsTest ? { bestScore: state.skillsTest.bestScore, bestTotal: state.skillsTest.bestTotal, bestPct: state.skillsTest.bestPct } : null,
+    flashcardsBest: state.flashcards ? state.flashcards.bestCorrect : 0,
+    evCalc: state.evCalc ? { fieldSize: state.evCalc.fieldSize, buyIn: state.evCalc.buyIn, roiPct: state.evCalc.roiPct, bankroll: state.evCalc.bankroll, eventsForRange: state.evCalc.eventsForRange } : null,
   };
 }
 
@@ -471,9 +566,12 @@ function loadProgress(){
       applyDrillStat(state.quiz, ds.terminology);
       applyDrillStat(state.potodds, ds.potOdds);
       applyDrillStat(state.potodds.outsDrill, ds.outsRule);
+      applyDrillStat(state.potodds.pushFoldDrill, ds.pushFold);
       if(state.preflop){ applyDrillStat(state.preflop.drill, ds.preflopPosition); applyDrillStat(state.preflop.facing, ds.facingARaise); }
+      if(state.threeBetFoldDrill) applyDrillStat(state.threeBetFoldDrill, ds.threeBetOrFold);
       if(state.ranges) applyDrillStat(state.ranges.drill, ds.rangeReading);
       if(state.bluff) applyDrillStat(state.bluff.drill, ds.betSizing);
+      if(state.bluff) applyDrillStat(state.bluff.breakevenDrill, ds.bluffBreakeven);
       if(state.variants){ applyDrillStat(state.variants.drill, ds.maxRaise); applyDrillStat(state.variants.sizeDrill, ds.betSize); applyDrillStat(state.variants.rankingDrill, ds.shortDeckRanking); }
       if(state.image) applyDrillStat(state.image.drill, ds.exploits);
     }
@@ -481,6 +579,12 @@ function loadProgress(){
       if(typeof data.skillsTest.bestScore==='number') state.skillsTest.bestScore = data.skillsTest.bestScore;
       if(typeof data.skillsTest.bestTotal==='number') state.skillsTest.bestTotal = data.skillsTest.bestTotal;
       if(typeof data.skillsTest.bestPct==='number') state.skillsTest.bestPct = data.skillsTest.bestPct;
+    }
+    if(typeof data.flashcardsBest==='number' && state.flashcards){
+      state.flashcards.bestCorrect = data.flashcardsBest;
+    }
+    if(data.evCalc && state.evCalc){
+      Object.assign(state.evCalc, data.evCalc);
     }
     return true;
   }catch(err){ return false; }
@@ -492,9 +596,11 @@ function resetAllProgress(){
   state.quiz.score=0; state.quiz.total=0;
   state.potodds.score=0; state.potodds.total=0;
   state.potodds.outsDrill.score=0; state.potodds.outsDrill.total=0;
+  state.potodds.pushFoldDrill.score=0; state.potodds.pushFoldDrill.total=0;
   if(state.preflop){ state.preflop.drill.score=0; state.preflop.drill.total=0; state.preflop.facing.score=0; state.preflop.facing.total=0; }
+  if(state.threeBetFoldDrill){ state.threeBetFoldDrill.score=0; state.threeBetFoldDrill.total=0; }
   if(state.ranges){ state.ranges.drill.score=0; state.ranges.drill.total=0; }
-  if(state.bluff){ state.bluff.drill.score=0; state.bluff.drill.total=0; }
+  if(state.bluff){ state.bluff.drill.score=0; state.bluff.drill.total=0; state.bluff.breakevenDrill.score=0; state.bluff.breakevenDrill.total=0; }
   if(state.variants){
     state.variants.drill.score=0; state.variants.drill.total=0;
     state.variants.sizeDrill.score=0; state.variants.sizeDrill.total=0;
@@ -502,6 +608,7 @@ function resetAllProgress(){
   }
   if(state.image){ state.image.drill.score=0; state.image.drill.total=0; }
   if(state.skillsTest){ state.skillsTest.bestScore=0; state.skillsTest.bestTotal=0; state.skillsTest.bestPct=0; }
+  if(state.flashcards){ state.flashcards.bestCorrect=0; }
   if(typeof localStorage!=='undefined'){ try{ localStorage.removeItem(SAVE_KEY); }catch(err){} }
 }
 
@@ -876,6 +983,150 @@ function payoutStructureFor(fieldSize){
   if(fieldSize<=20) return [0.4, 0.27, 0.19, 0.14];
   return [0.30, 0.20, 0.15, 0.12, 0.10, 0.08, 0.05]; // larger multi-table fields pay top 7
 }
+
+/* =========================================================
+   EV & RISK CALCULATOR — the single biggest remaining gap versus the
+   Blackjack trainer's own EV & Risk tab. Rather than importing a "SD as
+   a multiple of buy-in" figure from published tournament-poker sources
+   (real sources exist, but they're calibrated to 500-2000+ player
+   circuit fields — nothing like Hold'em's own 6/9/72/90-player tiers,
+   so borrowing their numbers directly would be dishonest), this derives
+   variance analytically from the trainer's own real, already-tested
+   payout structure. A skill-tilt parameter is calibrated so the mean
+   profit exactly matches whatever ROI% the player states, then that
+   SAME calibrated distribution is used to compute variance — internally
+   consistent by construction, not two mismatched numbers bolted
+   together. Standard, published formulas from here on: risk of ruin
+   (diffusion approximation), N0, and a session/trip variance range —
+   identical in form to the ones already proven out in Blackjack's own
+   EV tab, just applied to per-tournament units instead of per-hand.
+   ========================================================= */
+function tournamentMeanAndVariance(fieldSize, buyIn, roiPct){
+  const payouts = payoutStructureFor(fieldSize);
+  const prizePool = fieldSize * buyIn;
+  const numPaid = payouts.length;
+  const targetProfit = buyIn * (roiPct/100);
+
+  function distributionForK(k){
+    const weights = [];
+    let total = 0;
+    for(let r=1; r<=fieldSize; r++){ const w = Math.pow(fieldSize-r+1, k); weights.push(w); total += w; }
+    return weights.map(w=>w/total);
+  }
+  function meanProfitForK(k){
+    const probs = distributionForK(k);
+    let mean = 0;
+    for(let r=1; r<=numPaid; r++){ mean += probs[r-1] * (payouts[r-1]*prizePool); }
+    return mean - buyIn;
+  }
+  // Binary search the skill-tilt exponent k so the mean profit under this distribution
+  // exactly matches the player's stated ROI. k=0 is a uniformly random field (0% ROI by
+  // construction, since payouts then just redistribute buy-ins); k increases smoothly
+  // concentrates more probability toward the top of the field as ROI rises.
+  let lo = 0, hi = 30;
+  for(let iter=0; iter<50; iter++){
+    const mid = (lo+hi)/2;
+    if(meanProfitForK(mid) < targetProfit) lo = mid; else hi = mid;
+  }
+  const k = (lo+hi)/2;
+  const probs = distributionForK(k);
+  let mean = 0, meanSq = 0;
+  for(let r=1; r<=fieldSize; r++){
+    const payout = r<=numPaid ? payouts[r-1]*prizePool : 0;
+    const profit = payout - buyIn;
+    mean += probs[r-1]*profit;
+    meanSq += probs[r-1]*profit*profit;
+  }
+  const variance = Math.max(0, meanSq - mean*mean);
+  return { mean, variance, k };
+}
+function riskOfRuin(mean, variance, bankroll){
+  if(mean<=0 || bankroll<=0) return 1;
+  if(variance<=0) return 0; // a riskless positive-EV bet never busts
+  return Math.exp(-2*mean*bankroll/variance);
+}
+function n0Estimate(mean, variance){
+  if(mean<=0) return Infinity;
+  return variance/(mean*mean);
+}
+
+state.evCalc = { fieldSize:9, buyIn:20, roiPct:20, bankroll:75, eventsForRange:20 };
+
+function renderEvCalc(){
+  const e = state.evCalc;
+  const {mean, variance} = tournamentMeanAndVariance(e.fieldSize, e.buyIn, e.roiPct);
+  const sd = Math.sqrt(variance);
+  const ror = riskOfRuin(mean, variance, e.bankroll);
+  const n0 = n0Estimate(mean, variance);
+  const n = e.eventsForRange;
+  const rangeMean = mean*n, rangeSD = Math.sqrt(variance*n);
+
+  return `
+    <div class="card-box">
+      <h2>EV &amp; Risk Calculator</h2>
+      <div class="muted">Standard published bankroll-planning formulas — risk of ruin, N0, and a session variance range — applied to this trainer's own real payout structure rather than an imported number. A planning estimate, not a certified simulator; see the explanation below for what it assumes.</div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px;">
+        <label class="field">Field size
+          <input type="number" id="evFieldSize" value="${e.fieldSize}" min="2" max="200">
+        </label>
+        <label class="field">Buy-in ($)
+          <input type="number" id="evBuyIn" value="${e.buyIn}" min="1">
+        </label>
+        <label class="field">Assumed ROI (%)${infoIcon('Your own honest estimate of long-run return on investment per tournament \u2014 this is a real input every tournament player has to supply themselves, not something a calculator can measure for you. 15-25% is a realistic range for a solid player; be skeptical of anything higher.')}
+          <input type="number" id="evRoiPct" value="${e.roiPct}">
+        </label>
+        <label class="field">Bankroll ($)
+          <input type="number" id="evBankroll" value="${e.bankroll}" min="0">
+        </label>
+        <label class="field">Events to project
+          <input type="number" id="evEventsRange" value="${e.eventsForRange}" min="1">
+        </label>
+      </div>
+      <div class="btn-row" style="margin-top:10px;">
+        <button class="btn primary" id="evUseCareer">Use My Current Career Numbers</button>
+      </div>
+
+      <div style="margin-top:16px;">
+        <div class="pill">Mean profit / event: ${mean>=0?'+':''}$${mean.toFixed(2)}</div>
+        <div class="pill">Std. deviation / event: $${sd.toFixed(2)}${infoIcon('The spread of a single tournament\u2019s result around the mean, derived from this exact field size and payout structure once calibrated to your stated ROI.')}</div>
+        <div class="pill" style="${ror>0.2?'background:var(--bad); color:#fff;':''}">Risk of Ruin: ${ror*100<0.01?'<0.01':(ror*100).toFixed(2)}%${infoIcon('The classic diffusion approximation: exp(\u22122 \u00d7 mean \u00d7 bankroll / variance). Assumes indefinite play at these exact stakes with no adjustment as your bankroll changes \u2014 a real player would move down in stakes long before this played out in full.')}</div>
+        <div class="pill">N\u2080: ${isFinite(n0)?Math.round(n0).toLocaleString():'\u221E'} events${infoIcon('Roughly how many events until your cumulative edge equals one standard deviation \u2014 the rule-of-thumb point where the noise starts to look smaller than the signal (about 84% confidence of being ahead by then).')}</div>
+      </div>
+      <div class="explain-box" style="margin-top:12px;">
+        <div><b>Over your next ${n} events:</b> expected result $${rangeMean.toFixed(0)}, roughly 68% chance of landing between $${(rangeMean-rangeSD).toFixed(0)} and $${(rangeMean+rangeSD).toFixed(0)} (\u00b11 SD).</div>
+      </div>
+      <div class="muted" style="margin-top:14px; font-size:0.82rem;">
+        <b>What this assumes:</b> your finishes follow a smooth, skill-tilted distribution across the field, calibrated so its mean matches your stated ROI exactly — real results are lumpier than this (min-cashes and final-table runs happen in bursts, not smoothly), so treat every number here as a planning estimate, not a guarantee. Risk of Ruin in particular assumes you never adjust stakes as your bankroll moves, which a sensible player always would in practice.
+      </div>
+    </div>`;
+}
+
+function wireEvCalcEvents(){
+  const bind = (id, key, isFloat)=>{
+    const el = document.getElementById(id);
+    if(el) el.addEventListener('change', ()=>{
+      const v = isFloat ? parseFloat(el.value) : parseInt(el.value,10);
+      if(isFinite(v)) state.evCalc[key] = v;
+      render();
+    });
+  };
+  bind('evFieldSize','fieldSize',false);
+  bind('evBuyIn','buyIn',true);
+  bind('evRoiPct','roiPct',true);
+  bind('evBankroll','bankroll',true);
+  bind('evEventsRange','eventsForRange',false);
+  const useCareerBtn = document.getElementById('evUseCareer');
+  if(useCareerBtn) useCareerBtn.addEventListener('click', ()=>{
+    if(!state.career) return;
+    const tier = CAREER_TIERS[state.career.tier];
+    state.evCalc.bankroll = state.career.bankroll;
+    state.evCalc.buyIn = careerEntryCost(tier);
+    state.evCalc.fieldSize = tier.mtt ? tier.tableSize*2 : tier.tableSize;
+    if(state.mtt && state.mtt.fieldSize) state.evCalc.fieldSize = state.mtt.fieldSize;
+    render();
+  });
+}
 function ordinal(n){
   const s = ['th','st','nd','rd'];
   const v = n % 100;
@@ -986,9 +1237,12 @@ function newLifetimeState(){
 function totalDrillAttempts(s){
   let sum = s.quiz.total + s.potodds.total;
   if(s.potodds.outsDrill) sum += s.potodds.outsDrill.total;
+  if(s.potodds.pushFoldDrill) sum += s.potodds.pushFoldDrill.total;
   if(s.preflop) sum += s.preflop.drill.total + s.preflop.facing.total;
+  if(s.threeBetFoldDrill) sum += s.threeBetFoldDrill.total;
   if(s.ranges) sum += s.ranges.drill.total;
   if(s.bluff) sum += s.bluff.drill.total;
+  if(s.bluff && s.bluff.breakevenDrill) sum += s.bluff.breakevenDrill.total;
   if(s.variants) sum += s.variants.drill.total + s.variants.sizeDrill.total + s.variants.rankingDrill.total;
   if(s.image) sum += s.image.drill.total;
   return sum;
@@ -1934,6 +2188,16 @@ function handTypeForCards(holeCards){
 // seat opening cold would — these are simplified, fixed widths rather than a solved BB defense chart.
 const BB_DEFEND_PCT = {hu:55, '6max':42, '9max':36};
 
+/* Big Blind doesn't "open" (seat.pct is null), but it does have a real continuing/defend width
+   against a raise — this lets Facing A Raise and 3-Bet or Fold treat BB as a valid responder
+   instead of silently excluding it (which, for Heads-Up specifically, left zero valid responder
+   candidates at all, since BB is the only seat that ever faces a raise there — a real crash,
+   not just a gap, whenever a user picked Heads-Up and tried either drill). */
+function effectiveContinuingPct(seat, format){
+  if(seat.pct!=null) return seat.pct;
+  return BB_DEFEND_PCT[format] || 40;
+}
+
 function hardModePreflopDecision(player, t){
   const info = hardModeSeatInfo(t, player.id);
   if(!info) return null; // unsupported table size -> fall back to standard heuristic
@@ -2860,7 +3124,7 @@ function handlePlayKeydown(e){
    per-drill key logic: number keys click the Nth visible ".drill-answer" button, Enter/Space
    clicks whichever ".drill-next" button is currently on screen. Both are purely DOM-driven, so
    they automatically stay correct as drills change state — there's nothing to keep in sync. */
-const TAB_HOTKEYS = {a:'play', s:'terms', d:'potodds', f:'ranges', g:'bluff', h:'preflop', j:'stats', n:'variants', i:'image', t:'test', k:'manual', l:'options'};
+const TAB_HOTKEYS = {a:'play', s:'terms', d:'potodds', f:'ranges', g:'bluff', h:'preflop', j:'stats', n:'variants', i:'image', t:'test', e:'evcalc', k:'manual', l:'options'};
 
 function handleGlobalKeydown(e){
   const tag = (e.target && e.target.tagName) || '';
@@ -3081,7 +3345,8 @@ function renderPotOdds(){
         <div class="btn-row"><button class="btn primary drill-next" id="potOddsNext">Next Scenario</button></div>
       ` : ''}
     </div>
-    ${renderOutsDrillSection()}`;
+    ${renderOutsDrillSection()}
+    ${renderPushFoldSection()}`;
 }
 
 function renderOutsDrillSection(){
@@ -3117,6 +3382,66 @@ function renderOutsDrillSection(){
       <div class="muted">A separate, isolated drill from the simulated-equity scenario above — pure mental-math speed, not full equity calculation.</div>
       <div class="btn-row" style="margin-top:10px;">
         <button class="btn primary" id="toggleOutsDrill">${od.active?'Stop Drill':'Practice Rule of 2 and 4'}</button>
+      </div>
+    </div>
+    ${drillHTML}
+    ${renderPushFoldSection()}`;
+}
+
+/* =========================================================
+   PUSH OR FOLD — an isolated, single-decision-point drill: you're
+   short-stacked preflop, someone shoves all-in, no board, no betting
+   line, no history. Just the stack, the pot, your hand, and a binary
+   choice. Reuses the same real equity-vs-pot-odds math as the main
+   drill above, just stripped down to the single most common isolated
+   decision point in tournament poker.
+   ========================================================= */
+function generatePushFoldQuestion(){
+  const stackBB = 6 + Math.floor(Math.random()*15); // 6-20bb, classic push/fold territory
+  const bigBlind = 100; // fixed unit so displayed numbers stay clean regardless of table
+  const smallBlind = bigBlind/2;
+  const shoveAmount = stackBB * bigBlind;
+  const potBefore = smallBlind + bigBlind; // blinds only, no antes, keeps this genuinely isolated
+  const heroAlreadyIn = bigBlind; // hero is in the BB facing the shove — the most common real spot
+  const toCall = shoveAmount - heroAlreadyIn;
+  const requiredEquity = toCall / (potBefore + toCall*2);
+  const deck = shuffle(buildDeck());
+  const hero = [deck.pop(), deck.pop()];
+  return { stackBB, shoveAmount, potBefore, toCall, requiredEquity, hero, actualEquity:null, decided:null };
+}
+
+function renderPushFoldSection(){
+  const pf = state.potodds.pushFoldDrill;
+  let drillHTML = '';
+  if(pf.active){
+    if(!pf.question) pf.question = generatePushFoldQuestion();
+    const q = pf.question;
+    drillHTML = `
+      <div class="card-box" style="margin-top:16px;">
+        <h2>Push or Fold</h2>
+        <div class="score-tag">Score: ${pf.score} / ${pf.total}</div>
+        <div class="muted" style="margin-top:8px;">No board, no betting line, no history — just the moment. You're in the Big Blind with a ${q.stackBB}bb stack. An opponent shoves all-in for $${q.shoveAmount}. Pot is $${q.potBefore} before the shove. You have your hole cards and nothing else to go on.</div>
+        <div class="card-row" style="margin-top:10px;">${q.hero.map(c=>cardHTML(c,{size:'lg'})).join('')}</div>
+        <div class="btn-row" style="margin-top:10px;">
+          <button class="btn primary drill-answer" id="pushFoldCall" ${q.decided?'disabled':''}>Call</button>
+          <button class="btn danger drill-answer" id="pushFoldFold" ${q.decided?'disabled':''}>Fold</button>
+        </div>
+        ${q.decided ? `
+          <div class="explain-box">
+            <div><b>Required equity to call:</b> ${(q.requiredEquity*100).toFixed(1)}%</div>
+            <div style="margin-top:6px;"><b>Your actual equity:</b> ${(q.actualEquity*100).toFixed(1)}% <span class="muted">(vs. a random hand)</span></div>
+            <div style="margin-top:6px; color:${q.decided===(q.actualEquity>q.requiredEquity?'call':'fold')?'var(--good)':'var(--bad)'}">You chose <b>${q.decided}</b> — ${q.decided===(q.actualEquity>q.requiredEquity?'call':'fold')?'correct!':'not quite.'}</div>
+          </div>
+          <div class="btn-row"><button class="btn primary drill-next" id="pushFoldNext">Next Scenario</button></div>
+        ` : ''}
+      </div>`;
+  }
+  return `
+    <div class="card-box" style="margin-top:16px;">
+      <h3 style="margin-top:0; color:var(--gold-bright);">Push or Fold${infoIcon('A real, named short-stack tournament concept \u2014 with roughly 20bb or fewer, the decision usually collapses to a binary shove/call rather than a full postflop plan, since there\u2019s rarely enough behind to do much else.')}</h3>
+      <div class="muted">An isolated single-decision-point drill, distinct from the full scenario above — always preflop, always a shove, always this exact spot.</div>
+      <div class="btn-row" style="margin-top:10px;">
+        <button class="btn primary" id="togglePushFoldDrill">${pf.active?'Stop Drill':'Practice Push or Fold'}</button>
       </div>
     </div>
     ${drillHTML}`;
@@ -3165,6 +3490,33 @@ function wirePotOddsEvents(){
   const outsNextBtn = document.getElementById('outsDrillNext');
   if(outsNextBtn) outsNextBtn.addEventListener('click', ()=>{
     state.potodds.outsDrill.question = generateOutsQuestion();
+    render();
+  });
+  const togglePushFold = document.getElementById('togglePushFoldDrill');
+  if(togglePushFold) togglePushFold.addEventListener('click', ()=>{
+    state.potodds.pushFoldDrill.active = !state.potodds.pushFoldDrill.active;
+    if(state.potodds.pushFoldDrill.active) state.potodds.pushFoldDrill.question = generatePushFoldQuestion();
+    render();
+  });
+  const pushFoldDecide = (choice)=>{
+    const q = state.potodds.pushFoldDrill.question;
+    if(q.decided) return;
+    q.decided = choice;
+    q.actualEquity = estimateEquity(q.hero, [], 1200);
+    state.potodds.pushFoldDrill.total++;
+    const correctChoice = q.actualEquity>q.requiredEquity ? 'call' : 'fold';
+    if(choice===correctChoice) state.potodds.pushFoldDrill.score++;
+    recordDrillAnswer(choice===correctChoice);
+    choice===correctChoice ? sfxCorrect() : sfxWrong();
+    render();
+  };
+  const pfCallBtn = document.getElementById('pushFoldCall');
+  if(pfCallBtn) pfCallBtn.addEventListener('click', ()=>pushFoldDecide('call'));
+  const pfFoldBtn = document.getElementById('pushFoldFold');
+  if(pfFoldBtn) pfFoldBtn.addEventListener('click', ()=>pushFoldDecide('fold'));
+  const pushFoldNextBtn = document.getElementById('pushFoldNext');
+  if(pushFoldNextBtn) pushFoldNextBtn.addEventListener('click', ()=>{
+    state.potodds.pushFoldDrill.question = generatePushFoldQuestion();
     render();
   });
 }
@@ -3285,6 +3637,7 @@ const POSITION_FORMATS = {
   ]},
 };
 state.preflop = { format:'6max', seat:'utg', deck:'standard', drill:{active:false, question:null, score:0, total:0}, facing:{active:false, question:null, score:0, total:0, vsOpener:null} };
+state.threeBetFoldDrill = { active:false, question:null, score:0, total:0 };
 
 // 3-bet zone scales with the OPENER's range width: a raise from a tight early seat represents
 // a stronger average holding, so a smaller top slice is worth re-raising for value; a raise from
@@ -3373,6 +3726,103 @@ function newPositionDrillQuestion(deckMode){
   return {seat, type, hi:type.hi, lo:type.lo, suited:type.suited, label:type.label, correct, answered:false, userChoice:null};
 }
 
+/* =========================================================
+   FLASH CARDS SPEED ROUND — the Hold'em analogue of Blackjack's actual
+   Flash Cards mode: rapid strategy recognition against the clock, not a
+   single isolated concept (that's Rule of 2 and 4's and the isolated
+   drills' job). Reuses the exact same, already-tested opening-range
+   logic as Preflop Position's main drill above — the only thing
+   different here is the format: no explanation between questions, no
+   "next" button, just Raise/Fold as fast as you can read the hand, for
+   60 seconds straight.
+   ========================================================= */
+const FLASHCARD_DURATION_SECONDS = 60;
+let flashcardInterval = null;
+function flashcardTimeRemaining(fc){
+  if(!fc.startedAt) return FLASHCARD_DURATION_SECONDS;
+  const elapsed = (Date.now()-fc.startedAt)/1000;
+  return Math.max(0, FLASHCARD_DURATION_SECONDS - elapsed);
+}
+function startFlashcardTicker(){
+  if(typeof window==='undefined' || typeof window.setInterval!=='function') return; // safe no-op outside a browser
+  if(flashcardInterval) return;
+  flashcardInterval = setInterval(()=>{
+    const fc = state.flashcards;
+    if(!fc || !fc.active) { clearInterval(flashcardInterval); flashcardInterval = null; return; }
+    if(flashcardTimeRemaining(fc) <= 0){
+      endFlashcardRound();
+      clearInterval(flashcardInterval);
+      flashcardInterval = null;
+      return;
+    }
+    renderMain();
+  }, 250); // faster than 1s for a visibly smooth countdown
+}
+function endFlashcardRound(){
+  const fc = state.flashcards;
+  if(!fc.active) return;
+  fc.active = false;
+  if(fc.correct > fc.bestCorrect){ fc.bestCorrect = fc.correct; }
+  render();
+}
+
+state.flashcards = { active:false, startedAt:null, question:null, correct:0, wrong:0, bestCorrect:0 };
+
+function renderFlashcards(){
+  const fc = state.flashcards;
+  if(!fc.active){
+    return `
+      ${fc.bestCorrect>0 ? `<div class="pill" style="margin-top:8px;">Best round: ${fc.bestCorrect} correct</div>` : ''}
+      <div class="btn-row" style="margin-top:10px;">
+        <button class="btn primary" id="btnStartFlashcards">Start ${FLASHCARD_DURATION_SECONDS}-Second Round</button>
+      </div>`;
+  }
+  const remaining = Math.ceil(flashcardTimeRemaining(fc));
+  const urgent = remaining <= 10;
+  if(!fc.question) fc.question = newPositionDrillQuestion('standard');
+  const q = fc.question;
+  return `
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+      <div style="font-weight:700; color:var(--gold-bright);">Round in progress</div>
+      <div style="font-family:'JetBrains Mono',monospace; font-size:1.3rem; font-weight:700; color:${urgent?'var(--bad)':'var(--gold-bright)'};">${remaining}s</div>
+    </div>
+    <div style="height:6px; background:var(--panel-2); border-radius:4px; overflow:hidden; margin-top:6px;">
+      <div style="height:100%; width:${(remaining/FLASHCARD_DURATION_SECONDS)*100}%; background:${urgent?'var(--bad)':'var(--gold)'}; transition:width 0.25s linear;"></div>
+    </div>
+    <div class="score-tag" style="margin-top:10px;">Correct: ${fc.correct} &nbsp; Wrong: ${fc.wrong}</div>
+    <div class="muted" style="margin-top:10px;">${q.seat.label} (opens top ${q.seat.pct}%)</div>
+    <div class="card-row" style="margin-top:8px;">${cardHTML({r:q.hi,s:'s'},{size:'lg'})}${cardHTML({r:q.lo, s:q.suited?'s':'h'},{size:'lg'})}</div>
+    <div class="btn-row" style="margin-top:14px;">
+      <button class="btn drill-answer" id="fcRaise">Raise</button>
+      <button class="btn danger drill-answer" id="fcFold">Fold</button>
+    </div>`;
+}
+
+function wireFlashcardsEvents(){
+  const startBtn = document.getElementById('btnStartFlashcards');
+  if(startBtn) startBtn.addEventListener('click', ()=>{
+    const fc = state.flashcards;
+    fc.active = true; fc.startedAt = Date.now(); fc.correct = 0; fc.wrong = 0; fc.question = newPositionDrillQuestion('standard');
+    startFlashcardTicker();
+    render();
+  });
+  const answer = (choice)=>{
+    const fc = state.flashcards;
+    if(!fc.active || flashcardTimeRemaining(fc)<=0) return;
+    const q = fc.question;
+    const isCorrect = choice===q.correct;
+    if(isCorrect) fc.correct++; else fc.wrong++;
+    recordDrillAnswer(isCorrect);
+    isCorrect ? sfxCorrect() : sfxWrong();
+    fc.question = newPositionDrillQuestion('standard'); // immediately advance — no explanation, no "next" click
+    render();
+  };
+  const raiseBtn = document.getElementById('fcRaise');
+  if(raiseBtn) raiseBtn.addEventListener('click', ()=>answer('raise'));
+  const foldBtn = document.getElementById('fcFold');
+  if(foldBtn) foldBtn.addEventListener('click', ()=>answer('fold'));
+}
+
 function renderFacingRaiseGrid(responderPct, openerPct){
   const RANKS=[14,13,12,11,10,9,8,7,6,5,4,3,2];
   let rows='';
@@ -3405,6 +3855,26 @@ function newFacingRaiseQuestion(){
   const correct = classifyFacingRaise(type, seat.pct, opener.pct);
   const kind = correct==='3bet' ? threeBetKind(type, seat.pct, opener.pct) : null;
   return {seat, opener, type, correct, kind, threeBetPct: threeBetPctFor(opener.pct, seat.pct), answered:false, userChoice:null};
+}
+
+/* =========================================================
+   3-BET OR FOLD — an isolated, single-decision-point drill: a binary
+   collapse of the fuller Facing A Raise chart above (which offers
+   3-bet/call/fold). Some coaches deliberately teach this stricter,
+   simplified framing early on — either re-raise for value or get out,
+   no calling — to build range discipline before layering calling back
+   in. Reuses the exact same value-3-bet threshold already tested above.
+   ========================================================= */
+function generateThreeBetOrFoldQuestion(){
+  const seats = currentSeats();
+  const responderCandidates = seats.filter((s,i)=> s.pct!=null && i>=1 && openerCandidatesFor(s.id).length>0);
+  const seat = responderCandidates[Math.floor(Math.random()*responderCandidates.length)];
+  const openers = openerCandidatesFor(seat.id);
+  const opener = openers[Math.floor(Math.random()*openers.length)];
+  const type = HAND_TYPES[Math.floor(Math.random()*HAND_TYPES.length)];
+  const threeBetPct = threeBetPctFor(opener.pct, seat.pct);
+  const correct = type.cumPct <= threeBetPct ? '3bet' : 'fold';
+  return {seat, opener, type, threeBetPct, correct, answered:false, userChoice:null};
 }
 
 function renderPreflop(){
@@ -3465,7 +3935,18 @@ function renderPreflop(){
       </div>
     </div>
     ${drillHTML}
-    ${isShortDeck ? `<div class="card-box" style="margin-top:16px;"><div class="muted">Facing A Raise isn't available for Short-Deck yet \u2014 its 3-bet math is still built around the standard 52-card Chen ranking. Switch back to Standard Deck above to practice it.</div></div>` : (pct!=null ? renderFacingRaiseSection(pf, seatObj, pct) : '')}`;
+    ${isShortDeck ? `<div class="card-box" style="margin-top:16px;"><div class="muted">Facing A Raise isn't available for Short-Deck yet \u2014 its 3-bet math is still built around the standard 52-card Chen ranking. Switch back to Standard Deck above to practice it.</div></div>` : (pct!=null ? renderFacingRaiseSection(pf, seatObj, pct) : '')}
+    ${isShortDeck ? '' : renderThreeBetOrFoldSection()}
+    ${isShortDeck ? '' : renderFlashcardsSection()}`;
+}
+
+function renderFlashcardsSection(){
+  return `
+    <div class="card-box" style="margin-top:16px;">
+      <h3 style="margin-top:0; color:var(--gold-bright);">Flash Cards Speed Round${infoIcon('The same real opening-range logic as the drill above, in a rapid-fire timed format instead \u2014 no explanations between hands, testing quick recognition speed rather than careful calculation.')}</h3>
+      <div class="muted">Rapid preflop hand recognition against the clock — reuses the exact same math as the drill above, just at speed.</div>
+      ${renderFlashcards()}
+    </div>`;
 }
 
 function renderFacingRaiseSection(pf, seatObj, pct){
@@ -3528,6 +4009,43 @@ function renderFacingRaiseSection(pf, seatObj, pct){
       </div>
     </div>
     ${facingDrillHTML}`;
+}
+
+function renderThreeBetOrFoldSection(){
+  const tbf = state.threeBetFoldDrill;
+  let drillHTML = '';
+  if(tbf.active){
+    if(!tbf.question) tbf.question = generateThreeBetOrFoldQuestion();
+    const q = tbf.question;
+    drillHTML = `
+      <div class="card-box" style="margin-top:16px;">
+        <h2>3-Bet or Fold Drill</h2>
+        <div class="score-tag">Score: ${tbf.score} / ${tbf.total}</div>
+        <div class="muted" style="margin-top:8px;"><b style="color:var(--gold-bright)">${q.opener.label}</b> raises, you're in <b style="color:var(--gold-bright)">${q.seat.label}</b>. No calling allowed here — only 3-bet or fold.</div>
+        <div class="card-row" style="margin-top:10px;">${cardHTML({r:q.type.hi,s:'s'},{size:'lg'})}${cardHTML({r:q.type.lo, s:q.type.suited?'s':'h'},{size:'lg'})}</div>
+        <div class="muted" style="margin-top:4px;">${q.type.label}</div>
+        <div class="btn-row">
+          <button class="btn drill-answer" id="tbfDrill3bet" ${q.answered?'disabled':''}>3-Bet</button>
+          <button class="btn danger drill-answer" id="tbfDrillFold" ${q.answered?'disabled':''}>Fold</button>
+        </div>
+        ${q.answered ? `
+          <div class="explain-box">
+            <div><b>Correct action:</b> ${q.correct==='3bet'?'3-Bet':'Fold'} <span class="muted">(the value 3-bet zone here is the top ${q.threeBetPct.toFixed(1)}% &mdash; ${q.type.label} ${q.correct==='3bet'?'clears it':'does not clear it'})</span></div>
+            <div style="margin-top:6px; color:${q.userChoice===q.correct?'var(--good)':'var(--bad)'}">You chose <b>${q.userChoice}</b> — ${q.userChoice===q.correct?'correct!':'not quite.'}</div>
+          </div>
+          <div class="btn-row"><button class="btn primary drill-next" id="tbfDrillNext">Next Hand</button></div>
+        ` : ''}
+      </div>`;
+  }
+  return `
+    <div class="card-box" style="margin-top:16px;">
+      <h3 style="margin-top:0; color:var(--gold-bright);">3-Bet or Fold${infoIcon('A stricter, binary version of Facing A Raise above \u2014 some coaches teach this simplified framing early on to build range discipline before layering calling back in: either your hand is strong enough to re-raise, or it isn\u2019t worth the extra chips at all.')}</h3>
+      <div class="muted">An isolated single-decision-point drill, distinct from the full 3-bet/call/fold chart above — no middle ground, no calling.</div>
+      <div class="btn-row" style="margin-top:10px;">
+        <button class="btn primary" id="toggleThreeBetFoldDrill">${tbf.active?'Stop Drill':'Practice 3-Bet or Fold'}</button>
+      </div>
+    </div>
+    ${drillHTML}`;
 }
 
 function wirePreflopEvents(){
@@ -3593,6 +4111,32 @@ function wirePreflopEvents(){
     state.preflop.facing.question = newFacingRaiseQuestion();
     render();
   });
+  const toggleTbf = document.getElementById('toggleThreeBetFoldDrill');
+  if(toggleTbf) toggleTbf.addEventListener('click', ()=>{
+    state.threeBetFoldDrill.active = !state.threeBetFoldDrill.active;
+    if(state.threeBetFoldDrill.active) state.threeBetFoldDrill.question = generateThreeBetOrFoldQuestion();
+    render();
+  });
+  const tbf3bet = document.getElementById('tbfDrill3bet');
+  if(tbf3bet) tbf3bet.addEventListener('click', ()=>answerThreeBetFoldDrill('3bet'));
+  const tbfFold = document.getElementById('tbfDrillFold');
+  if(tbfFold) tbfFold.addEventListener('click', ()=>answerThreeBetFoldDrill('fold'));
+  const tbfNext = document.getElementById('tbfDrillNext');
+  if(tbfNext) tbfNext.addEventListener('click', ()=>{
+    state.threeBetFoldDrill.question = generateThreeBetOrFoldQuestion();
+    render();
+  });
+  wireFlashcardsEvents();
+}
+function answerThreeBetFoldDrill(choice){
+  const q = state.threeBetFoldDrill.question;
+  if(q.answered) return;
+  q.answered = true; q.userChoice = choice;
+  state.threeBetFoldDrill.total++;
+  if(choice===q.correct) state.threeBetFoldDrill.score++;
+  recordDrillAnswer(choice===q.correct);
+  choice===q.correct ? sfxCorrect() : sfxWrong();
+  render();
 }
 function answerFacingDrill(choice){
   const q = state.preflop.facing.question;
@@ -3874,7 +4418,60 @@ const EQUITY_OPTIONS = [
   {label:'Medium draw (~25%)', q:0.25}, {label:'Strong draw (~35%)', q:0.35},
 ];
 
-state.bluff = { pct:0.66, equity:0, drill:{active:false, question:null, score:0, total:0} };
+state.bluff = { pct:0.66, equity:0, drill:{active:false, question:null, score:0, total:0}, breakevenDrill:{active:false, question:null, score:0, total:0} };
+
+/* =========================================================
+   BLUFF BREAKEVEN % — an isolated single-decision-point drill: given a
+   pot and a bare bluff-raise size, what percentage of the time does the
+   opponent need to fold for the bluff to break even, assuming zero
+   showdown value? Distinct from the main drill above (which asks how
+   many bluff COMBOS balance a given number of value combos) — this is
+   a pure percentage-threshold question, the other classic way this
+   same idea gets taught, isolated from range-construction entirely.
+   ========================================================= */
+function generateBluffBreakevenQuestion(){
+  const pot = [40,60,100,150,250,400][Math.floor(Math.random()*6)];
+  const raiseSize = Math.round(pot * (0.4 + Math.random()*1.1)); // roughly 40%-150% pot
+  const breakEvenPct = Math.round((raiseSize/(pot+raiseSize))*100);
+  const pool = new Set([breakEvenPct, Math.round((raiseSize/pot)*100), Math.round((pot/(pot+raiseSize))*100), Math.min(95,breakEvenPct+15)]);
+  let opts = shuffle([...pool]).slice(0, Math.min(4, pool.size));
+  if(!opts.includes(breakEvenPct)) opts[0] = breakEvenPct;
+  opts = shuffle(opts);
+  return { pot, raiseSize, breakEvenPct, options:opts, answered:false, userChoice:null };
+}
+function renderBluffBreakevenSection(){
+  const bd = state.bluff.breakevenDrill;
+  let drillHTML = '';
+  if(bd.active){
+    if(!bd.question) bd.question = generateBluffBreakevenQuestion();
+    const q = bd.question;
+    drillHTML = `
+      <div class="card-box" style="margin-top:16px;">
+        <h2>Bluff Breakeven %</h2>
+        <div class="score-tag">Score: ${bd.score} / ${bd.total}</div>
+        <div class="muted" style="margin-top:8px;">Pot is <b style="color:var(--gold-bright)">$${q.pot}</b>. You bluff-raise for <b style="color:var(--gold-bright)">$${q.raiseSize}</b> with a hand that has zero showdown value if called. Roughly what % of the time does villain need to fold for this to break even?</div>
+        <div class="btn-row">
+          ${q.options.map(opt=>`<button class="btn drill-answer${q.answered?(opt===q.breakEvenPct?' primary':''):''}" data-bevopt="${opt}" ${q.answered?'disabled':''}>~${opt}%</button>`).join('')}
+        </div>
+        ${q.answered ? `
+          <div class="explain-box">
+            <div><b>Correct answer:</b> ~${q.breakEvenPct}% <span class="muted">(raise $${q.raiseSize} into a $${q.pot} pot &mdash; fold% = raise / (pot + raise) = ${q.raiseSize} / ${q.pot+q.raiseSize})</span></div>
+            <div style="margin-top:6px; color:${q.userChoice===q.breakEvenPct?'var(--good)':'var(--bad)'}">You chose ~${q.userChoice}% — ${q.userChoice===q.breakEvenPct?'correct!':'not quite.'}</div>
+          </div>
+          <div class="btn-row"><button class="btn primary drill-next" id="bevDrillNext">Next Scenario</button></div>
+        ` : ''}
+      </div>`;
+  }
+  return `
+    <div class="card-box" style="margin-top:16px;">
+      <h3 style="margin-top:0; color:var(--gold-bright);">Bluff Breakeven %${infoIcon('The other classic way to teach this same idea \u2014 instead of asking how many bluff combos balance your value combos, this asks the flip side directly: what fold percentage alone justifies a bare bluff of this size, with zero backup equity.')}</h3>
+      <div class="muted">An isolated single-decision-point drill — no range construction, no combo counting, just a raise size and a pot.</div>
+      <div class="btn-row" style="margin-top:10px;">
+        <button class="btn primary" id="toggleBluffBreakevenDrill">${bd.active?'Stop Drill':'Practice Bluff Breakeven %'}</button>
+      </div>
+    </div>
+    ${drillHTML}`;
+}
 
 function buildNearbyOptions(correct, max){
   const pool = new Set([correct]);
@@ -4098,7 +4695,8 @@ function renderBluff(){
         <button class="btn primary" id="toggleBluffDrill">${drill.active?'Stop Drill':'Practice Combo Balance'}</button>
       </div>
     </div>
-    ${drillHTML}`;
+    ${drillHTML}
+    ${renderBluffBreakevenSection()}`;
 }
 
 function wireBluffEvents(){
@@ -4130,6 +4728,28 @@ function wireBluffEvents(){
   const nextBtn = document.getElementById('bluffDrillNext');
   if(nextBtn) nextBtn.addEventListener('click', ()=>{
     state.bluff.drill.question = generateBluffDrillQuestion();
+    render();
+  });
+  const toggleBev = document.getElementById('toggleBluffBreakevenDrill');
+  if(toggleBev) toggleBev.addEventListener('click', ()=>{
+    state.bluff.breakevenDrill.active = !state.bluff.breakevenDrill.active;
+    if(state.bluff.breakevenDrill.active) state.bluff.breakevenDrill.question = generateBluffBreakevenQuestion();
+    render();
+  });
+  document.querySelectorAll('[data-bevopt]').forEach(btn=>btn.addEventListener('click', ()=>{
+    const q = state.bluff.breakevenDrill.question;
+    if(q.answered) return;
+    const choice = parseInt(btn.dataset.bevopt,10);
+    q.answered = true; q.userChoice = choice;
+    state.bluff.breakevenDrill.total++;
+    if(choice===q.breakEvenPct) state.bluff.breakevenDrill.score++;
+    recordDrillAnswer(choice===q.breakEvenPct);
+    choice===q.breakEvenPct ? sfxCorrect() : sfxWrong();
+    render();
+  }));
+  const bevNextBtn = document.getElementById('bevDrillNext');
+  if(bevNextBtn) bevNextBtn.addEventListener('click', ()=>{
+    state.bluff.breakevenDrill.question = generateBluffBreakevenQuestion();
     render();
   });
 }
@@ -4234,9 +4854,18 @@ function wireStatsEvents(){
     state.quiz.score=0; state.quiz.total=0;
     state.potodds.score=0; state.potodds.total=0;
     state.potodds.outsDrill.score=0; state.potodds.outsDrill.total=0;
+    state.potodds.pushFoldDrill.score=0; state.potodds.pushFoldDrill.total=0;
     state.preflop.drill.score=0; state.preflop.drill.total=0;
+    state.preflop.facing.score=0; state.preflop.facing.total=0;
+    state.threeBetFoldDrill.score=0; state.threeBetFoldDrill.total=0;
     state.ranges.drill.score=0; state.ranges.drill.total=0;
     state.bluff.drill.score=0; state.bluff.drill.total=0;
+    if(state.variants){
+      state.variants.drill.score=0; state.variants.drill.total=0;
+      state.variants.sizeDrill.score=0; state.variants.sizeDrill.total=0;
+      state.variants.rankingDrill.score=0; state.variants.rankingDrill.total=0;
+    }
+    if(state.image){ state.image.drill.score=0; state.image.drill.total=0; }
     render();
   });
 }
@@ -4687,28 +5316,29 @@ function renderManual(){
         <p class="muted">Four tiers: Local League (6-Max) &rarr; Regional Circuit (Full Ring) &rarr; National Championship (Full Ring, Hard AI) &rarr; The Majors (Full Ring Multi-Table, Hard AI). Every event is a completely normal tournament — the tier just auto-selects the format, table size, difficulty, and buy-in; nothing about how a tournament plays is different from entering one manually. Placements earn ranking points (100 for 1st, scaling down to 5 for a min finish); reach a tier's point threshold and you're promoted. Winning an event at the top tier makes you a champion. This is entirely separate from the Tournament tab, which stays available the whole time as a practice toggle — jump into any format directly regardless of career progress.</p>
       </details>
       <details class="man-sec">
-        <summary>Known Limitations (v0.35.0)</summary>
+        <summary>Known Limitations (v0.39.0)</summary>
         <ul class="muted" style="line-height:1.7;">
           <li>Sponsorships aren't built yet — the Marker Called screen has an architectural slot reserved for "burn a sponsorship" once that system exists.</li>
           <li>Career Mode's entry cost and marker size scale only by tier, not by betting structure.</li>
           <li>Preflop Position's Short-Deck chart covers opening ranges only — Facing A Raise isn't available for Short-Deck yet. Range Reading isn't deck-aware at all.</li>
           <li>Limit Hold'em's raise cap (4 bets/street) is a fixed constant. Hard-mode AI's Big Blind defense uses a fixed defend-width per format.</li>
-          <li>Table Image &amp; Exploits reads VPIP/PFR/Aggression Factor only — it doesn't yet track bet-sizing tells the way a sharp human opponent eventually would.</li>
-          <li>The Full Skills Test draws from 5 of the trainer's skill areas — the 3 Hold'em Variants drills, the Exploits drill, and the Rule of 2 and 4 drill aren't included yet.</li>
-          <li>The decision clock is visual pressure only — it doesn't force a fold on expiry, a deliberate choice to avoid an unintended auto-fold from a timing edge case.</li>
-          <li>No EV &amp; Risk Calculator (real Monte Carlo risk-of-ruin/variance planning against the career bankroll) — the single biggest remaining feature gap versus the Blackjack trainer.</li>
-          <li>No genuine rapid-fire Flash Cards speed round (distinct from the Rule of 2 and 4 single-concept drill), and no isolated single-decision-point drills in the style of Blackjack's Insurance drill.</li>
-          <li><b>Tablet/phone support is a confirmed, significant gap</b> — this trainer has 2 media queries versus the Blackjack trainer's 28, no touch/hover input distinction, no tab-bar collapse for an 11-tab bar, and the poker table itself has never been checked against an actual phone width. Likely broken, not just unpolished, below roughly 500px.</li>
+          <li>Table Image &amp; Exploits reads VPIP/PFR/Aggression Factor only. The Full Skills Test and volume achievement counter don't include Flash Cards or the EV Calculator yet. The decision clock doesn't force a fold on expiry, deliberately.</li>
+          <li>The EV &amp; Risk Calculator's variance model and its stated assumptions are described in the tool itself and in v0.38.0's entry below.</li>
+          <li><b>Mobile responsiveness has real, targeted fixes now, but isn't a full match for Blackjack's much more mature responsive system</b> (6 media queries here versus Blackjack's 28, built over many incremental versions). The seat-layout collapse, touch-target sizing, and key-badge hiding were verified structurally (correct CSS present, correct specificity, correct selectors) and the full functional regression confirms no game logic broke — but none of it has been visually verified on a real device or browser, since that capability isn't available in this environment. Treat this as a real, tested-where-testable improvement, not a guarantee of how it actually looks on your phone.</li>
         </ul>
       </details>
       <details class="man-sec">
         <summary>🗺️ Roadmap</summary>
-        <p class="muted">Every item from the original Blackjack feature-parity audit is built, plus the Valentine Invitational. Working through the remaining sticking points smallest-to-largest: (a) achievement volume/streak categories — <b>done this version</b>; (b) Insurance-style isolated single-decision drills; (c) a genuine Flash Cards speed round; (d) an EV &amp; Risk Calculator; (e) full tablet/phone responsiveness, the largest remaining item, deliberately saved for last since it touches every screen already built.</p>
+        <p class="muted">Every item from the original Blackjack feature-parity audit is built, plus the Valentine Invitational, and the full smallest-to-largest sticking-points list is complete: (a) achievement volume/streak categories, (b) isolated single-decision drills, (c) a Flash Cards speed round, (d) an EV &amp; Risk Calculator, and (e) mobile responsiveness fixes — all <b>done</b>. Open threads worth another pass, in no particular priority: sponsorships, Short-Deck coverage for Facing A Raise and Range Reading, broadening what feeds the Full Skills Test and volume achievements, and genuine visual QA of the mobile work on a real device, which this environment can't do.</p>
       </details>
       <details class="man-sec">
         <summary>📜 Version History</summary>
         <div class="muted" style="line-height:1.7;">
-          <div><b>v0.35.0</b> — Added the volume and streak achievement categories Blackjack's milestone list has that Hold'em's didn't: 3 volume achievements (10/100/1,000 total graded decisions across <i>any</i> of the trainer's 11 drill areas), 2 streak achievements (10/25 correct answers in a row, also across any drill — switching tabs mid-streak doesn't break it, matching Blackjack's "any mode" framing), a Complete Player achievement (80%+ accuracy with 25+ volume in all 5 of the Skills Test's core areas simultaneously, not just one at a time), and a Perfect Score achievement for a genuine 100% on the Full Skills Test. The streak tracker required touching all 11 individual drill-answer handlers across the app, plus the Skills Test's own — each one now reports its correct/incorrect result to a single shared tracker, rather than each drill keeping its own separate streak. Tested: the streak increments on correct answers and resets to zero on a miss while still remembering the true peak afterward, confirmed the streak genuinely carries across different drill types (not just within one), all volume and streak thresholds fire at the exact boundary and not one unit early, Complete Player confirmed to require every one of the 5 core drills at 80%+ (not just some of them, tested by having exactly one fall one point short), Perfect Score confirmed to require exactly 100% and not 93%, and a full persistence round-trip for the new streak data. Full 24,000-hand regression and a 12-tab render sweep came back clean, with the achievement count now at 23 total (16 existing + 7 new).</div>
+          <div><b>v0.39.0</b> — Tackled the last item: mobile responsiveness. Read Blackjack's actual 28 media queries directly rather than guessing at patterns, and ported the single most important one: below 480px width, the poker table's absolutely-positioned oval arc of seats — which doesn't have room to exist at phone width no matter how small the text gets — is abandoned entirely in favor of a plain vertical list, the exact same structural fix Blackjack's own table uses at the same width for the same reason. This was more than a copy-paste: Hold'em's seat positions are set by inline <code>style="left:...; top:..."</code> attributes from JS, and CSS specificity gives inline styles priority over any selector unless marked <code>!important</code> — so the override needed <code>!important</code> on position, left, top, and transform simultaneously, which a normal media-query rule wouldn't have achieved. Also disabled the seat-pulse animation on this layout rather than trying to make it behave: the animation's keyframes bake in a <code>translate(-50%,-50%)</code> centering transform that no longer applies once seats are static, and CSS animations can silently override an <code>!important</code> transform declared elsewhere for the same property — sidestepping that fight entirely by swapping to a plain static highlight was simpler and more reliable than trying to win it. Beyond the table: hid keyboard-shortcut badges and disabled hover-only tooltips under <code>(pointer:coarse)</code> since neither means anything without a keyboard or a mouse, bumped every button to a real 44px touch target (the standard floor on both iOS and Android — the desktop padding alone fell short), and added tablet and phone breakpoints scaling down text, cards, and spacing across the tabs most likely to feel cramped (Range Reading's grid, Career's tier table, the Skills Test). Tested everything that's actually testable without a real browser: confirmed the seat override rule genuinely carries <code>!important</code> on all four properties that need it, confirmed the touch button rule hits the real 44px floor, confirmed key-badges are hidden under the coarse-pointer query, confirmed the animation is disabled rather than left to conflict, confirmed the stylesheet itself has balanced braces, and reran the full 36,000-hand regression plus a 13-tab render sweep to confirm none of this — being CSS-only — touched any actual game logic. What I could not do, and want to be direct about rather than imply otherwise: none of this has been seen on an actual phone or in an actual browser. I can verify the right rules exist with the right specificity; I can't verify how it actually looks without the ability to render and screenshot a real page, which isn't available here. That's a real gap between "structurally correct" and "confirmed to look right," and it's the honest place to end this pass.</div>
+          <div style="margin-top:8px;"><b>v0.38.0</b> — Added the EV &amp; Risk Calculator, the single biggest remaining feature gap versus Blackjack's own EV tab: a new 13th tab computing Risk of Ruin, N₀, and a session variance range against the real career bankroll economy. The interesting design problem here was where the variance number should even come from — real published tournament-variance figures exist, but every one I found is calibrated to 500-2000+ player professional-circuit fields, nothing like this trainer's own 6/9/72/90-player tiers, so importing one of those numbers directly would have been quietly dishonest despite looking authoritative. Instead, variance is derived analytically from the trainer's own real, already-tested payout structure: a skill-tilt parameter is calibrated by binary search so the mean profit exactly matches whatever ROI% the player states, and that same calibrated distribution is then used to compute variance — internally consistent by construction rather than two mismatched numbers bolted together. From there, Risk of Ruin and N₀ use the identical diffusion-approximation formulas already proven out in Blackjack's own EV tab, just applied to per-tournament units instead of per-hand. A "Use My Current Career Numbers" button pulls your real bankroll, current tier's buy-in, and actual field size (the real one, if you're mid-tournament, not a guess) directly from live career state. Caught a real bug before it ever reached testing: an early version referenced a constant that's declared later in the file, which throws in JavaScript since <code>const</code> isn't hoisted the way <code>function</code> is — caught immediately by the syntax/reference check that runs before any test is allowed to proceed. Tested extensively given how much new math this introduces: confirmed the skill-tilt calibration hits the exact stated ROI (within 5 cents) across 25 combinations of field size and target ROI, confirmed variance is never negative and correctly increases with field size at a fixed ROI (a real, well-known property of tournament variance), confirmed Risk of Ruin's edge cases (zero bankroll means certain ruin, a losing player means certain ruin regardless of bankroll, zero variance with a positive edge means zero risk, and more bankroll always lowers risk at fixed mean/variance), confirmed N₀ correctly requires more events for a weaker edge, confirmed the career-numbers button pulls genuinely live data including the real active tournament's field size when one is in progress, and a full persistence round-trip for every input. The calculator's own disclosed assumptions (a smooth parametric model, no stake adjustment in the Risk of Ruin math) are stated directly in the tool itself, not just in this changelog. Full 24,000-hand regression and a 13-tab render sweep came back clean.</div>
+          <div style="margin-top:8px;"><b>v0.37.0</b> — Added a genuine Flash Cards speed round to Preflop Position, matching what Blackjack's Flash Cards mode actually is: rapid strategy recognition against the clock, not a single isolated concept (that's Rule of 2 and 4's and the isolated drills' job). Reuses the exact same, already-tested opening-range logic as the main Preflop Position drill — the only thing different is the format: a real 60-second timer, no explanation shown between questions, and no "next" button at all — answering immediately generates the next hand, maximizing throughput the way an actual speed round has to. Tracks a persisted best-correct-count across rounds. The timer uses the same safe pattern already proven for the tournament decision clock: a guarded <code>setInterval</code> that's a hard no-op with no real browser present, with the actual remaining-time math computed independently of whether the interval ever fires — which is what makes it testable at all in this environment. Caught and fixed a real mistake of my own before it ever reached testing: an early edit left <code>renderFlashcardsSection()</code> missing its closing brace, which would have been a hard syntax error breaking the entire file — caught immediately by the syntax checker that runs before any test is allowed to proceed, not discovered later by chance. Tested: timer math verified correct at round start, mid-round, and past expiry (clamped at zero, never negative), confirmed answering truly advances immediately with no separate step, confirmed the best score updates only on genuine improvement and never regresses on a worse round, confirmed the no-browser ticker guard, confirmed the late-answer guard correctly detects expired time, and a full persistence round-trip. Also documented honestly rather than silently patched: Flash Cards doesn't yet feed the volume-achievement counter or the Full Skills Test, since it tracks a per-round best rather than a persistent cumulative total the way every other drill does — a real, named scope boundary rather than an oversight. Full 24,000-hand regression and a 12-tab render sweep came back clean.</div>
+          <div style="margin-top:8px;"><b>v0.36.0</b> — Set out to build three isolated single-decision drills (Blackjack's Insurance-drill pattern) and discovered two of the three already existed, complete and correctly wired: <b>3-Bet or Fold</b> (a stricter binary collapse of Facing A Raise, living in Preflop Position) and <b>Push or Fold</b> (a real, named 6-20bb short-stack tournament concept, using genuine cards and live Monte Carlo equity rather than an abstract stated number — better than what I'd been about to build from scratch). Verified both properly rather than assuming "already there" meant "correct": generation logic checked against their underlying threshold functions across 300 samples each, full persistence round-trips, and confirmed Push or Fold's click handler — a locally-scoped function I initially couldn't find with a naive search and briefly suspected was a real missing-function bug, until closer inspection showed it was correctly defined and already using the shared streak tracker. Built the one genuinely missing piece: <b>Bluff Breakeven %</b> in Bet Sizing &amp; Bluffing — given a pot and a bare bluff-raise size, what fold percentage alone justifies it with zero backup equity. Deliberately a different framing from the existing Combo Balance drill (a pure percentage threshold instead of a combo-count), the other classic way this same idea gets taught. While wiring this in, found and fixed a real, quietly-wrong piece of my own previous version's work: <code>totalDrillAttempts()</code>, which the volume achievements depend on, had never counted Push or Fold or 3-Bet or Fold at all, since I didn't know either drill existed when I wrote that function last version — meaning every player's progress toward the volume achievements had been silently undercounted from two entire drills' worth of activity. Fixed to cover all 14 drill-total fields now in the trainer, verified with a direct count test (caught my own arithmetic mistake mid-test — miscounted 14 fields as 13 on the first pass, re-verified properly rather than shipping a false "it's wrong" or false "it's right" without checking the actual number). Full 36,000-hand regression and a 12-tab render sweep came back clean.</div>
+          <div style="margin-top:8px;"><b>v0.35.0</b> — Added the volume and streak achievement categories Blackjack's milestone list has that Hold'em's didn't: 3 volume achievements (10/100/1,000 total graded decisions across <i>any</i> of the trainer's 11 drill areas), 2 streak achievements (10/25 correct answers in a row, also across any drill — switching tabs mid-streak doesn't break it, matching Blackjack's "any mode" framing), a Complete Player achievement (80%+ accuracy with 25+ volume in all 5 of the Skills Test's core areas simultaneously, not just one at a time), and a Perfect Score achievement for a genuine 100% on the Full Skills Test. The streak tracker required touching all 11 individual drill-answer handlers across the app, plus the Skills Test's own — each one now reports its correct/incorrect result to a single shared tracker, rather than each drill keeping its own separate streak. Tested: the streak increments on correct answers and resets to zero on a miss while still remembering the true peak afterward, confirmed the streak genuinely carries across different drill types (not just within one), all volume and streak thresholds fire at the exact boundary and not one unit early, Complete Player confirmed to require every one of the 5 core drills at 80%+ (not just some of them, tested by having exactly one fall one point short), Perfect Score confirmed to require exactly 100% and not 93%, and a full persistence round-trip for the new streak data. Full 24,000-hand regression and a 12-tab render sweep came back clean, with the achievement count now at 23 total (16 existing + 7 new).</div>
           <div style="margin-top:8px;"><b>v0.34.1</b> — Renamed the final-boss character to Bonnie Valentine (from Vivienne Castellane), with an added backstory: scream queen extraordinaire before she became a poker legend. Purely a naming/flavor change — same original fictional character, same mechanics, same "not a real public figure" reasoning. Renamed the two secret achievement ids to match (<code>valentine_invite</code>/<code>valentine_defeated</code>); any already-saved progress under the old ids is simply orphaned harmlessly rather than causing an error, since achievement rendering iterates the current achievement list, not whatever happens to be sitting in saved data. Confirmed no other references to the old name remained anywhere in the functional code.</div>
           <div style="margin-top:8px;"><b>v0.34.0</b> — Added <b>The Castellane Invitational</b>: reach a $1,000,000 career bankroll (current or lifetime peak) and get invited to a private 10-table, $100,000 buy-in, 90-player field against Vivienne Castellane — an original fictional Hollywood-actress-turned-feared-pro character, not a real public figure. Real named public figures (including the specific one originally requested) are something I won't write as characters regardless of framing, so this uses an original character built for the same "final boss" narrative role instead. Two secret achievements: one for the invitation itself, one for actually winning the event — both hidden as "???" in the Stats tab's achievement list until unlocked, so they stay a genuine surprise. Winning is tracked with its own dedicated flag that survives a Career reset via the same lifetime-fold mechanism the other achievements use. While testing this at its real 90-player scale, found and fixed a genuinely serious <i>pre-existing</i> performance bug that had shipped undetected in the already-released 8-table Hard-mode option: because every AI player at every table was running Hard mode's live per-decision equity simulation, a single human hand at 8-10 tables could take 20 to 33 <i>seconds</i> to resolve — a real freeze, not a slowdown. Fixed by having background tables (the ones nobody is actively watching) always run Standard difficulty regardless of what the human's own table uses, which doesn't change the difficulty the player actually experiences at their own table, but cut worst-case per-hand latency from over 30 seconds down to under 400 milliseconds. This is exactly the kind of thing that's easy to miss when you only test for correctness and not for how long correctness takes — the earlier 8-table regression this session confirmed chip conservation and completion, but never measured per-hand wall-clock time, which is what actually matters for a real user's experience. Tested: the $1M threshold triggers precisely (not a dollar before), secret achievements confirmed to render as "???" and never leak their name or description before being earned, the full 90-player tournament run end-to-end with exact chip conservation, buy-in deduction verified exact, win-detection confirmed to fire only on an actual 1st-place finish and never for a career that hasn't won, and the performance fix verified both for the new 10-table event and confirmed to leave the existing 2/4/8-table paths completely unaffected. Full 36,000-hand regression and a 12-tab render sweep came back clean.</div>
           <div style="margin-top:8px;"><b>v0.33.0</b> — Finished the last three items on the Blackjack-parity list. (10) <b>Rule of 2 and 4</b>: an isolated flash-card drill in Pot Odds &amp; Equity teaching the fast mental-math shortcut for estimating equity from an out count (outs &times; 4 with two cards to come, &times; 2 with one) — deliberately separate from the Monte-Carlo-simulated real equity used elsewhere in that tab, using canonical draw types (flush draw, open-ender, gutshot, etc.) rather than a general outs-counter, since that's how the shortcut is actually taught. (9) <b>Table chatter, dealer personality, and a decision clock</b>: dealers now have real names and rotate every 20-35 hands with a log message, occasional chatter fires on big pots, and tournaments show a genuine 20-second visual countdown on your turn — deliberately visual-only, not a forced fold, to avoid an unintended auto-fold from timing edge cases. (7) <b>Full Skills Test</b>, the biggest piece: a combined, graded 15-question assessment pulling from 5 skill areas at once. Rather than trying to awkwardly reuse each tab's own render function (each has different UI and state shape), every topic got a small adapter normalizing its already-tested underlying generator into one common {prompt, choices, correctIndex} shape — the randomness and correctness logic is 100% reused from the real tabs, only the presentation layer is new. Tracks a persisted best score that only updates on a genuine improvement. Tested: all 5 adapters verified to produce valid, non-duplicate choices with a correct answer actually present across 500 combined samples, a full simulated test run scoring exactly as expected on both a perfect run and a deliberately-wrong run, explicitly confirmed a worse subsequent attempt does <i>not</i> overwrite an existing best score, dealer shifts landing inside the correct 20-35 hand window, decision-clock math verified at start/mid-countdown/expiry (clamped at zero, never negative, and confirmed inapplicable to cash games), and full persistence round-trips for both the outs drill and the Skills Test best score. Full 36,000-hand regression and a 12-tab render sweep came back clean.</div>
@@ -4866,6 +5496,7 @@ function renderMain(){
   else if(state.activeTab==='variants') html = renderVariants();
   else if(state.activeTab==='image') html = renderImage();
   else if(state.activeTab==='test') html = renderSkillsTest();
+  else if(state.activeTab==='evcalc') html = renderEvCalc();
   else if(state.activeTab==='manual') html = renderManual();
   else if(state.activeTab==='options') html = renderOptions();
   el.innerHTML = html;
@@ -4880,6 +5511,7 @@ function renderMain(){
   else if(state.activeTab==='variants') wireVariantsEvents();
   else if(state.activeTab==='image') wireImageEvents();
   else if(state.activeTab==='test') wireSkillsTestEvents();
+  else if(state.activeTab==='evcalc') wireEvCalcEvents();
   else if(state.activeTab==='options') wireOptionsEvents();
 }
 
