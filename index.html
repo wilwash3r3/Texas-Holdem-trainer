@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%230d2a1e%22%2F%3E%3Cg%20transform%3D%22translate(32%2034)%20rotate(-20)%20translate(-32%20-34)%22%3E%3Cg%20transform%3D%22translate(11%2012)%20rotate(-13)%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%2234%22%20height%3D%2248%22%20rx%3D%224%22%20fill%3D%22%23fffdf7%22%20stroke%3D%22%2300000029%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%2228%22%20height%3D%2242%22%20rx%3D%222%22%20fill%3D%22none%22%20stroke%3D%22%23a13d2c%22%20stroke-opacity%3D%22.35%22%2F%3E%3Ctext%20x%3D%226%22%20y%3D%2215%22%20font-family%3D%22Georgia%2Cserif%22%20font-size%3D%2213%22%20font-weight%3D%22700%22%20fill%3D%22%23a13d2c%22%3EK%3C%2Ftext%3E%3Ctext%20x%3D%2217%22%20y%3D%2238%22%20font-size%3D%2220%22%20text-anchor%3D%22middle%22%20fill%3D%22%23a13d2c%22%3E%26%239829%3B%3C%2Ftext%3E%3C%2Fg%3E%3Cg%20transform%3D%22translate(21%208)%20rotate(7)%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%2234%22%20height%3D%2248%22%20rx%3D%224%22%20fill%3D%22%23fffdf7%22%20stroke%3D%22%2300000029%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%2228%22%20height%3D%2242%22%20rx%3D%222%22%20fill%3D%22none%22%20stroke%3D%22%231c1c1c%22%20stroke-opacity%3D%22.35%22%2F%3E%3Ctext%20x%3D%226%22%20y%3D%2215%22%20font-family%3D%22Georgia%2Cserif%22%20font-size%3D%2213%22%20font-weight%3D%22700%22%20fill%3D%22%231c1c1c%22%3EA%3C%2Ftext%3E%3Ctext%20x%3D%2217%22%20y%3D%2238%22%20font-size%3D%2220%22%20text-anchor%3D%22middle%22%20fill%3D%22%231c1c1c%22%3E%26%239824%3B%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Hold'em Trainer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -77,7 +78,7 @@
   }
   .court .ix .su{font-size:0.76em;}
   .court .pip{position:absolute; left:50%; top:52%; transform:translate(-50%,-50%); line-height:1; font-size:0.6em;}
-  .wordmark{text-align:left;}
+  .wordmark{text-align:left; display:flex; flex-direction:column;}
   .wordmark .name{
     font-family:'Playfair Display',serif; font-weight:900; font-size:var(--name-size);
     line-height:0.9; letter-spacing:-0.015em; color:var(--cream);
@@ -104,7 +105,7 @@
   .btn{
     display:inline-flex; align-items:center; gap:8px; font-weight:600; font-size:0.92rem;
     padding:14px 26px; border-radius:12px; border:1px solid var(--panel-line);
-    background:var(--panel); color:var(--cream); text-decoration:none;
+    background:var(--panel); color:var(--cream); text-decoration:none; white-space:nowrap;
     transition:transform 0.08s ease, background 0.15s, border-color 0.15s, color 0.15s;
   }
   .btn:hover{background:#1a4530; color:var(--cream); text-decoration:none; transform:translateY(-1px);}
