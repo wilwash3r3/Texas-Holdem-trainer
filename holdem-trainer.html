@@ -4,25 +4,29 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Hold'em Trainer — Probability &amp; Bluffing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap');
   :root{
-    --bg:#0c1f15; --panel:#153724; --panel-2:#1c422b; --panel-line:rgba(217,197,140,0.18);
-    --gold:#c9a227; --gold-bright:#e8c14f; --cream:#f1e9d8; --cream-dim:#c9c2ac;
-    --red:#a13d2c; --black:#1c1c1c; --good:#5fae6e; --bad:#c9564a;
-    --felt-a:#226b40; --felt-b:#0c2c1b;
-    --deck-stripe-a:#c9a227; --deck-stripe-b:#1c422b; --deck-border:#e8c14f;
+    /* palette shared with the Blackjack trainer */
+    --felt-1:#0d2a1e; --felt-2:#153b29;
+    --bg:#0d2a1e; --panel:#123423; --panel-2:#1a4530; --panel-line:#2c5a41;
+    --gold:#c9a227; --gold-bright:#e8c14f; --cream:#f2ead3; --cream-dim:#cfc6ab;
+    --red:#a13d2c; --black:#1c1c1c; --good:#4f9d69; --bad:#b5442e;
+    --felt-a:#145034; --felt-b:#092a1b;
+    --deck-stripe-a:#c9a227; --deck-stripe-b:#123423; --deck-border:#e8c14f;
   }
   *{box-sizing:border-box;}
   html,body{height:100%;}
   body{
     margin:0; min-height:100vh;
     background:
-      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(232,193,79,0.07), transparent 60%),
-      var(--bg);
+      radial-gradient(ellipse at 50% -10%, #1c4a33 0%, transparent 60%),
+      linear-gradient(180deg, var(--felt-1), var(--felt-2) 60%, #0a1f16 100%);
+    background-attachment:fixed;
     color:var(--cream); font-family:'Inter',sans-serif;
   }
-  h1,h2,h3{font-family:'Playfair Display',serif; margin:0 0 8px;}
+  h1,h2,h3{font-family:'Fraunces',serif; margin:0 0 8px; letter-spacing:0.01em;}
   a{color:var(--gold-bright);}
   button{font-family:'Inter',sans-serif; cursor:pointer;}
   ::-webkit-scrollbar{height:8px; width:8px;}
@@ -30,67 +34,117 @@
 
   /* ---------- header / brand (ported from index.html for family consistency) ---------- */
   header{
-    position:sticky; top:0; z-index:50;
-    background:rgba(12,31,21,0.92); backdrop-filter:blur(6px);
+    position:sticky; top:0; z-index:50; overflow:visible;
+    background:rgba(9,26,18,0.9); backdrop-filter:blur(6px);
     border-bottom:1px solid var(--panel-line);
-    padding:10px 18px;
+    padding:14px 22px 10px;
   }
   .hdr-row{display:flex; align-items:center; justify-content:space-between; gap:16px; max-width:1400px; margin:0 auto; flex-wrap:wrap;}
-  .brand{display:inline-flex; align-items:center; gap:12px; text-decoration:none; color:inherit;}
-  .hdr-fan{position:relative; flex:0 0 auto; width:52px; height:52px; transform:rotate(-20deg);}
+  /* the sign hangs off the bar and over the felt, the way Blackjack's brandmark does */
+  .brand{
+    display:inline-flex; align-items:center; gap:10px; text-decoration:none; color:inherit;
+    position:relative; z-index:60;
+  }
+  /* the card fan sits proud of the bar — it overhangs the header's top and left edges the
+     way Blackjack's does, so the mark reads as pinned onto the room rather than inside a box */
+  .brand .hdr-fan{
+    display:block; width:74px; height:74px;
+    margin:2px 0 -4px 2px; transform:rotate(-20deg);
+    filter:drop-shadow(0 10px 16px rgba(0,0,0,0.55));
+  }
+  .brand .hdr-fan .court{width:42px; height:58px; border-radius:5px;}
+  .brand .hdr-fan .court .ix{font-size:13px;}
+  .brand .hdr-fan .court .pip{font-size:23px;}
+  @keyframes brandNudge{
+    0%,100%{ filter:drop-shadow(0 10px 16px rgba(0,0,0,0.55)); transform:rotate(-20deg); }
+    50%{ filter:drop-shadow(0 10px 20px rgba(232,193,79,0.55)); transform:rotate(-14deg) scale(1.06); }
+  }
+  html[data-chrome-hidden] .brand .hdr-fan{animation:brandNudge 1.5s ease-in-out 3;}
+  .hdr-fan{position:relative; flex:0 0 auto; width:60px; height:60px; transform:rotate(-20deg);}
+  .brand:hover h1.hdr-name{color:var(--gold-bright);}
   .court{
     position:relative; flex:0 0 auto; overflow:hidden;
     background:linear-gradient(158deg,#fffdf7,#f1e9d5);
-    box-shadow:0 6px 14px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(0,0,0,0.16);
+    box-shadow:0 8px 20px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(0,0,0,0.16);
     color:#1c1c1c; transform-origin:82% 100%;
   }
-  .hdr-fan .court{position:absolute; left:12%; top:6%; width:30px; height:42px; border-radius:4px;}
+  .hdr-fan .court{position:absolute; left:12%; top:6%; width:34px; height:48px; border-radius:4px;}
   .hdr-fan .court.a{transform:rotate(9deg) translateX(12%); z-index:2;}
   .hdr-fan .court.b{transform:rotate(-21deg) translateX(-34%);}
   .court.red{color:var(--red);}
   .court::before{content:''; position:absolute; inset:8%; border:1.5px solid currentColor; opacity:0.4; border-radius:2px;}
-  .court .ix{position:absolute; top:5%; left:8%; display:flex; flex-direction:column; align-items:center; line-height:0.82; font-family:'Playfair Display',serif; font-weight:700; letter-spacing:-0.02em; font-size:9px;}
+  .court .ix{position:absolute; top:5%; left:8%; display:flex; flex-direction:column; align-items:center; line-height:0.82; font-family:'Playfair Display',serif; font-weight:700; letter-spacing:-0.02em; font-size:11px;}
   .court .ix .su{font-size:0.76em;}
-  .court .pip{position:absolute; left:50%; top:52%; transform:translate(-50%,-50%); line-height:1; font-size:15px;}
+  .court .pip{position:absolute; left:50%; top:52%; transform:translate(-50%,-50%); line-height:1; font-size:19px;}
   .hdr-word{display:flex; flex-direction:column; align-items:flex-start;}
-  h1.hdr-name{font-family:'Playfair Display',serif; font-weight:900; font-size:1.5rem; line-height:1; letter-spacing:-0.015em; color:var(--cream); margin:0;}
+  h1.hdr-name{font-family:'Playfair Display',serif; font-weight:900; font-size:1.9rem; transition:color 0.15s ease; line-height:1; letter-spacing:-0.015em; color:var(--cream); margin:0;}
   h1.hdr-name > span:first-child{color:var(--gold-bright);}
-  .hdr-sub{font-family:'JetBrains Mono',monospace; font-size:0.58rem; letter-spacing:0.28em; text-transform:uppercase; color:rgba(233,215,160,0.7); margin-top:4px;}
-  .hdr-version{font-family:'JetBrains Mono',monospace; font-size:0.68rem; color:var(--cream-dim); border:1px solid var(--panel-line); border-radius:20px; padding:4px 10px; white-space:nowrap;}
+  .hdr-sub{font-family:'JetBrains Mono',monospace; font-size:0.58rem; letter-spacing:0.34em; text-transform:uppercase; color:rgba(233,215,160,0.7); margin-top:4px;}
+  .hdr-version{font-family:'JetBrains Mono',monospace; font-size:0.6rem; color:var(--cream-dim); background:rgba(0,0,0,0.25); border-radius:6px; padding:3px 8px; letter-spacing:0.03em; white-space:nowrap;}
   /* ---------- end ported header ---------- */
 
   /* ---------- tabs ---------- */
-  nav.tabs{display:flex; gap:6px; overflow-x:auto; max-width:1400px; margin:10px auto 0; padding-bottom:2px;}
+  nav.tabs{
+    display:flex; gap:6px; overflow-x:auto; max-width:1400px; margin:12px auto 0; padding-bottom:4px;
+    transition:max-height 0.24s ease, opacity 0.18s ease, margin 0.24s ease;
+  }
+  /* Hidden mode: the tab row and the table-settings strip both fold away a few seconds after
+     you settle in, so the felt gets the room. Hovering the brandmark brings them back.
+     Tab hotkeys keep working the whole time. */
+  html[data-chrome-hidden] nav.tabs{max-height:0; opacity:0; margin-top:0; padding-bottom:0; pointer-events:none;}
+  html[data-chrome-hidden][data-chrome-peek] nav.tabs{max-height:70px; opacity:1; margin-top:12px; padding-bottom:4px; pointer-events:auto;}
+  .table-settings{
+    overflow:hidden;
+    transition:max-height 0.3s ease, opacity 0.2s ease, margin 0.3s ease, padding 0.3s ease;
+    max-height:200px;
+  }
+  html[data-chrome-hidden] .table-settings{max-height:0; opacity:0; margin-bottom:0; padding-top:0; padding-bottom:0; border-width:0; pointer-events:none;}
+  html[data-chrome-hidden][data-chrome-peek] .table-settings{max-height:200px; opacity:1; margin-bottom:16px; padding:20px 22px; border-width:1px; pointer-events:auto;}
+  /* the hand history rolls up too, and unrolls when you reach for it */
+  html[data-chrome-hidden] .log-box{max-height:0 !important; opacity:0; padding-top:0; padding-bottom:0; margin-top:0;}
+  /* a 0-height, 0-opacity box can't be hovered — the label above it is the hover target */
+  html[data-chrome-hidden] .log-peek:hover ~ .log-box,
+  html[data-chrome-hidden] .log-box:hover,
+  html[data-chrome-hidden][data-chrome-peek] .log-box{max-height:96px !important; opacity:1; padding:8px 12px; margin-top:12px;}
+  html[data-chrome-hidden] .log-peek:hover{color:var(--gold-bright);}
+  html[data-chrome-hidden] .log-peek{
+    display:block; text-align:center; margin-top:6px; cursor:default;
+    font-family:'JetBrains Mono', monospace; font-size:0.62rem; letter-spacing:0.18em;
+    text-transform:uppercase; color:rgba(233,215,160,0.4);
+  }
+  .log-peek{display:none;}
   .tab-btn{
     background:var(--panel); border:1px solid var(--panel-line); color:var(--cream-dim);
-    border-radius:10px 10px 0 0; padding:9px 14px; font-size:0.82rem; font-weight:600;
-    white-space:nowrap; border-bottom:none; transition:background 0.2s, color 0.2s, box-shadow 0.25s, transform 0.15s;
+    border-radius:12px; padding:10px 18px; font-size:0.85rem; font-weight:600;
+    white-space:nowrap; transition:background 0.15s, color 0.15s, transform 0.08s;
   }
-  .tab-btn:hover{color:var(--cream); transform:translateY(-1px);}
-  .tab-btn.active{background:var(--panel-2); color:var(--gold-bright); box-shadow:inset 0 2px 0 var(--gold-bright), 0 -2px 10px rgba(232,193,79,0.06);}
-  .tab-btn .soon-badge{font-size:0.62rem; background:var(--panel-line); color:var(--cream-dim); border-radius:8px; padding:1px 6px; margin-left:6px;}
+  .tab-btn:hover{color:var(--cream); background:#1a4530; transform:translateY(-1px);}
+  .tab-btn.active{background:var(--gold); color:#20200c; border-color:var(--gold-bright);}
+  .tab-btn .soon-badge{font-size:0.62rem; background:rgba(0,0,0,0.22); color:var(--cream-dim); border-radius:8px; padding:1px 6px; margin-left:6px;}
+  .tab-btn.active .soon-badge{background:rgba(0,0,0,0.16); color:#20200c;}
 
   main{max-width:1400px; margin:0 auto; padding:18px;}
   .mode-section{display:none;}
   .mode-section.active{display:block;}
 
-  .card-box{background:var(--panel); border:1px solid var(--panel-line); border-radius:14px; padding:18px 20px; margin-bottom:16px; box-shadow:0 8px 24px rgba(0,0,0,0.18);}
+  .card-box{background:var(--panel); border:1px solid var(--panel-line); border-radius:18px; padding:20px 22px; margin-bottom:16px; box-shadow:0 10px 28px rgba(0,0,0,0.28);}
   .card-box h2{color:var(--gold-bright); font-size:1.15rem;}
   .muted{color:var(--cream-dim); font-size:0.88rem; line-height:1.55;}
   .pill{display:inline-block; background:var(--panel-2); border:1px solid var(--panel-line); border-radius:20px; padding:4px 12px; font-size:0.76rem; color:var(--cream-dim); margin:2px 4px 2px 0;}
 
   .btn{
-    display:inline-flex; align-items:center; gap:8px; font-weight:600; font-size:0.88rem;
-    padding:10px 18px; border-radius:10px; border:1px solid var(--panel-line); background:var(--panel-2); color:var(--cream);
-    transition:transform 0.12s, box-shadow 0.2s, border-color 0.15s, color 0.15s, background 0.15s;
+    display:inline-flex; align-items:center; gap:8px; font-weight:600; font-size:0.85rem;
+    padding:10px 16px; border-radius:10px; border:1px solid var(--panel-line); background:var(--panel); color:var(--cream);
+    transition:transform 0.08s ease, background 0.15s ease, border-color 0.15s, color 0.15s;
+    touch-action:manipulation;
   }
-  .btn:hover:not(:disabled){border-color:var(--gold); color:var(--gold-bright); transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.25);}
+  .btn:hover:not(:disabled){background:#1a4530; color:var(--cream); transform:translateY(-1px);}
   .btn:active:not(:disabled){transform:translateY(0);}
   .btn:disabled{opacity:0.35; cursor:not-allowed;}
-  .btn.primary{background:linear-gradient(160deg,var(--gold-bright),var(--gold)); color:#20200c; border-color:var(--gold-bright); box-shadow:0 2px 10px rgba(232,193,79,0.18);}
-  .btn.primary:hover:not(:disabled){background:linear-gradient(160deg,#f0cd66,var(--gold-bright)); color:#20200c; box-shadow:0 6px 16px rgba(232,193,79,0.3);}
-  .btn.danger{background:transparent; border-color:var(--bad); color:var(--bad);}
-  .btn.danger:hover:not(:disabled){box-shadow:0 4px 12px rgba(201,86,74,0.25);}
+  .btn.primary{background:var(--gold); color:#20200c; border-color:var(--gold-bright);}
+  .btn.primary:hover:not(:disabled){background:var(--gold-bright); color:#20200c;}
+  .btn.danger{background:transparent; border-color:rgba(181,68,46,0.7); color:#f0a89a;}
+  .btn.danger:hover:not(:disabled){background:rgba(181,68,46,0.25); border-color:var(--bad); color:#f0a89a;}
   .btn-row{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;}
 
   select,input[type=number],input[type=range]{
@@ -101,13 +155,13 @@
 
   /* ---------- playing cards ---------- */
   @keyframes cardDeal{ from{ opacity:0; transform:translateY(-6px) scale(0.92); } to{ opacity:1; transform:translateY(0) scale(1); } }
+  .pcard.deal{animation:cardDeal 0.22s ease-out;}
   .pcard{
     width:52px; height:74px; border-radius:6px;
     background:linear-gradient(158deg,#fffdf7,#f1e9d5);
     box-shadow:0 5px 12px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.6) inset, inset 0 0 0 1px rgba(0,0,0,0.14);
     color:var(--black); display:inline-flex; flex-direction:column; justify-content:space-between;
     padding:4px 5px; font-family:'Playfair Display',serif; position:relative; flex:0 0 auto;
-    animation:cardDeal 0.22s ease-out;
   }
   .pcard.lg{width:66px; height:94px;}
   .pcard.sm{width:38px; height:54px; padding:2px 3px;}
@@ -123,6 +177,41 @@
       repeating-linear-gradient(45deg, var(--deck-stripe-a) 0 5px, var(--deck-stripe-b) 5px 10px);
     border:2px solid var(--deck-border); box-shadow:0 5px 12px rgba(0,0,0,0.5);
   }
+  /* the double rule a good deck prints inside its edge — same as Blackjack's cards */
+  .pcard::before{content:''; position:absolute; inset:7%; border:1.5px solid currentColor; opacity:0.32; border-radius:3px; pointer-events:none;}
+  .pcard.back::before{display:none;}
+  .zoom-group{position:relative; cursor:zoom-in;}
+  .group-zoom.down{bottom:auto; top:calc(100% + 10px);}
+  .group-zoom{
+    display:none; position:absolute; bottom:calc(100% + 10px); left:50%; transform:translateX(-50%);
+    z-index:120; padding:9px; border-radius:12px; gap:8px;
+    background:rgba(4,10,7,0.94); border:1px solid var(--gold);
+    box-shadow:0 14px 32px rgba(0,0,0,0.65);
+  }
+  .pcard-big{
+    display:block; position:relative; width:108px; height:152px; border-radius:10px;
+    background:linear-gradient(158deg,#fffdf7,#f1e9d5); color:var(--black);
+    font-family:'Playfair Display',serif; font-weight:700;
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,0.14);
+  }
+  .pcard-big.red{color:var(--red);}
+  .pcard-big::before{content:''; position:absolute; inset:6%; border:1.5px solid currentColor; opacity:0.3; border-radius:5px;}
+  .pcard-big .pb-tl, .pcard-big .pb-br{
+    position:absolute; display:flex; flex-direction:column; align-items:center;
+    font-size:1.45rem; line-height:0.86;
+  }
+  .pcard-big .pb-tl span, .pcard-big .pb-br span{font-size:0.8em;}
+  .pcard-big .pb-tl{top:11px; left:12px;}
+  .pcard-big .pb-br{bottom:11px; right:12px; transform:rotate(180deg);}
+  .pcard-big .pb-mid{
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    font-size:3.4rem; line-height:1;
+  }
+  @media (hover: hover){
+    .zoom-group:hover{z-index:130;}
+    .zoom-group:hover > .group-zoom{display:flex;}
+    .seat:hover{z-index:60;}
+  }
   .card-row{display:flex; gap:6px; align-items:center;}
 
   /* ---------- chips ---------- */
@@ -132,23 +221,49 @@
     box-shadow:0 2px 4px rgba(0,0,0,0.5), inset 0 0 0 2px rgba(255,255,255,0.18), inset 0 -2px 2px rgba(0,0,0,0.25);
     border:1px dashed rgba(255,255,255,0.35);
   }
-  .chip.c1{background:#c9564a;}    /* small bets */
-  .chip.c2{background:#3f7fd1;}    /* medium bets */
-  .chip.c3{background:#3ba05c;}    /* larger bets */
-  .chip.c4{background:#20200c; border-color:var(--gold-bright);} /* big bets/all-in tier */
+  .chip.c1, .pot-chip.c1{background:#c9564a;}    /* small bets */
+  .chip.c2, .pot-chip.c2{background:#3f7fd1;}    /* medium bets */
+  .chip.c3, .pot-chip.c3{background:#3ba05c;}    /* larger bets */
+  .chip.c4, .pot-chip.c4{background:#20200c; border-color:var(--gold-bright);} /* big bets/all-in tier */
 
   /* ---------- poker table (Play mode) ---------- */
-  .table-wrap{position:relative; width:100%; max-width:980px; margin:0 auto; aspect-ratio:16/10; min-height:420px;}
+  /* wooden rail + felt bed, matching the Blackjack table */
+  .table-fit{width:100%; display:flex; justify-content:center; overflow:visible;}
+  .table-wrap{
+    position:relative; width:980px; height:612px; flex:0 0 auto; margin:0 auto;
+    transform-origin:top center; container-type:inline-size;
+    border-radius:50% / 42%;
+    background:linear-gradient(168deg,#8a6236 0%,#4a3018 38%,#2f1d0e 62%,#7a5530 100%);
+    box-shadow:0 26px 50px rgba(0,0,0,0.55), inset 0 2px 0 rgba(255,255,255,0.20), inset 0 -3px 6px rgba(0,0,0,0.5);
+  }
   .felt{
     position:absolute; inset:6%; border-radius:50%/42%;
     background:
-      radial-gradient(ellipse at 50% 35%, rgba(255,255,255,0.05), transparent 45%),
-      radial-gradient(ellipse at 50% 40%, var(--felt-a), var(--felt-b) 78%);
-    border:10px solid #3a2412;
-    border-image:linear-gradient(160deg,#4a2f18,#2a1a0d) 1;
-    box-shadow:0 0 0 3px var(--gold) inset, 0 0 30px rgba(0,0,0,0.6) inset, 0 20px 45px rgba(0,0,0,0.55);
+      radial-gradient(ellipse 90% 70% at 50% 8%, rgba(255,255,255,0.10), transparent 60%),
+      radial-gradient(ellipse 120% 90% at 50% 108%, rgba(0,0,0,0.55), transparent 62%),
+      repeating-linear-gradient(135deg, rgba(255,255,255,0.014) 0 2px, transparent 2px 5px),
+      repeating-linear-gradient(45deg, rgba(0,0,0,0.02) 0 2px, transparent 2px 5px),
+      linear-gradient(180deg, var(--felt-a) 0%, #0f3d29 55%, var(--felt-b) 100%);
+    box-shadow:inset 0 0 0 2px rgba(0,0,0,0.45), inset 0 0 34px rgba(0,0,0,0.55), inset 0 3px 10px rgba(0,0,0,0.4);
   }
-  .board-area{position:absolute; left:50%; top:38%; transform:translate(-50%,-50%); text-align:center;}
+  /* the house mark, printed into the felt: outlines only, so it reads as part of the cloth
+     rather than a picture sitting on top of it */
+  .felt-mark{
+    position:absolute; left:50%; top:50%; z-index:0; pointer-events:none;
+    width:56%; display:flex; flex-direction:column; align-items:center; gap:2cqw;
+    transform:translate(-50%,-50%);
+    opacity:0.13; color:#f2ead3; text-align:center;
+  }
+  .felt-mark .fm-name{
+    font-family:'Playfair Display', serif; font-weight:900; font-size:7.4cqw;
+    line-height:0.95; letter-spacing:-0.01em; white-space:nowrap;
+  }
+  .felt-mark .fm-rule{display:block; width:52%; height:2px; background:currentColor; opacity:0.7;}
+  .felt-mark .fm-sub{
+    font-family:'JetBrains Mono', monospace; font-size:2.3cqw;
+    letter-spacing:0.44em; text-transform:uppercase; white-space:nowrap;
+  }
+  .board-area{position:absolute; left:50%; top:38%; transform:translate(-50%,-50%); text-align:center; z-index:2;}
   .pot-line{font-family:'JetBrains Mono',monospace; color:var(--gold-bright); font-size:0.9rem; margin-bottom:8px; display:flex; align-items:center; justify-content:center; gap:8px;}
   .seat{
     position:absolute; width:150px; transform:translate(-50%,-50%); text-align:center;
@@ -176,7 +291,25 @@
   }
   .seat .cards{display:flex; gap:3px; justify-content:center; margin-top:6px;}
 
-  .action-bar{display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:center; margin-top:16px; padding:14px; background:var(--panel); border:1px solid var(--panel-line); border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,0.2);}
+  /* table talk: what the seat is saying, anchored over their cards */
+  .seat-bubble{
+    position:absolute; left:50%; bottom:calc(100% + 8px); transform:translateX(-50%);
+    z-index:40; width:max-content; max-width:190px; pointer-events:none;
+    background:rgba(6,16,11,0.95); border:1px solid rgba(233,215,160,0.34);
+    border-radius:10px; padding:6px 10px;
+    font-size:0.72rem; line-height:1.35; color:var(--cream); text-align:center;
+    box-shadow:0 8px 20px rgba(0,0,0,0.55);
+    animation:bubblePop 0.22s cubic-bezier(.2,.9,.3,1) both;
+  }
+  .seat-bubble::after{
+    content:''; position:absolute; top:100%; left:50%; transform:translateX(-50%);
+    border:6px solid transparent; border-top-color:rgba(233,215,160,0.34);
+  }
+  @keyframes bubblePop{
+    from{opacity:0; transform:translateX(-50%) translateY(6px) scale(0.94);}
+    to{opacity:1; transform:translateX(-50%) translateY(0) scale(1);}
+  }
+  .action-bar{position:sticky; bottom:8px; z-index:30; display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:center; margin-top:16px; padding:16px; background:var(--panel); border:1px solid var(--panel-line); border-radius:18px; box-shadow:0 10px 28px rgba(0,0,0,0.28);}
   .action-bar .amount{font-family:'JetBrains Mono',monospace; color:var(--gold-bright); font-size:0.85rem;}
   .key-badge{
     display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:18px;
@@ -184,20 +317,25 @@
     font-family:'JetBrains Mono',monospace; font-size:0.68rem; font-weight:700; margin-left:6px; vertical-align:middle;
   }
 
-  .log-box{max-height:130px; overflow-y:auto; font-family:'JetBrains Mono',monospace; font-size:0.72rem; color:var(--cream-dim); background:var(--panel-2); border-radius:10px; padding:8px 12px; margin-top:12px; line-height:1.6;}
+  .log-box{max-height:96px; transition:max-height 0.3s ease, opacity 0.2s ease, padding 0.3s ease, margin 0.3s ease; overflow-y:auto; font-family:'JetBrains Mono',monospace; font-size:0.72rem; color:var(--cream-dim); background:var(--panel-2); border-radius:10px; padding:8px 12px; margin-top:12px; line-height:1.6;}
 
   /* ---------- win/loss result banner ---------- */
   @keyframes bannerPop{ from{opacity:0; transform:translateY(-8px) scale(0.95);} to{opacity:1; transform:translateY(0) scale(1);} }
+  /* a solid card ON the felt — the same verdict treatment Blackjack uses */
   .result-banner{
-    margin:14px auto 0; max-width:420px; text-align:center; padding:14px 20px; border-radius:12px;
-    animation:bannerPop 0.35s ease-out; box-shadow:0 8px 24px rgba(0,0,0,0.35);
+    position:absolute; left:50%; top:44%; transform:translate(-50%,-50%);
+    z-index:70; pointer-events:none;
+    width:max-content; max-width:420px; text-align:center; padding:18px 26px; border-radius:16px;
+    background:rgba(4,10,7,0.93);
+    animation:bannerPop 0.35s ease-out;
+    box-shadow:0 10px 30px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06);
   }
-  .result-banner.win{background:linear-gradient(160deg, rgba(95,174,110,0.2), rgba(95,174,110,0.06)); border:1px solid var(--good);}
-  .result-banner.lose{background:linear-gradient(160deg, rgba(201,86,74,0.2), rgba(201,86,74,0.06)); border:1px solid var(--bad);}
-  .result-banner.push{background:var(--panel-2); border:1px solid var(--panel-line);}
-  .result-banner .result-title{font-family:'Playfair Display',serif; font-weight:900; font-size:1.4rem; letter-spacing:0.02em;}
-  .result-banner.win .result-title{color:var(--good);}
-  .result-banner.lose .result-title{color:var(--bad);}
+  .result-banner.win{border:2px solid var(--gold-bright);}
+  .result-banner.lose{border:2px solid rgba(217,79,79,0.85);}
+  .result-banner.push{border:2px solid var(--panel-line);}
+  .result-banner .result-title{font-family:'Fraunces',serif; font-weight:700; font-size:1.5rem; letter-spacing:0.05em;}
+  .result-banner.win .result-title{color:var(--gold-bright); text-shadow:0 2px 0 #000, 0 0 18px rgba(232,193,79,0.5);}
+  .result-banner.lose .result-title{color:#ff9b9b; text-shadow:0 2px 0 #000;}
   .result-banner .result-sub{font-size:0.82rem; color:var(--cream-dim); margin-top:4px;}
 
   /* ---------- info tooltips ---------- */
@@ -226,7 +364,7 @@
   .quiz-choice.correct{border-color:var(--good); background:rgba(95,174,110,0.15); color:var(--good);}
   .quiz-choice.incorrect{border-color:var(--bad); background:rgba(201,86,74,0.15); color:var(--bad);}
   .score-tag{font-family:'JetBrains Mono',monospace; font-size:0.78rem; color:var(--cream-dim);}
-  .explain-box{background:var(--panel-2); border-left:3px solid var(--gold); border-radius:8px; padding:12px 14px; margin-top:12px; font-size:0.85rem; line-height:1.6;}
+  .explain-box{background:rgba(0,0,0,0.25); border-left:2px solid var(--panel-line); border-radius:10px; padding:12px 14px; margin-top:12px; font-size:0.85rem; line-height:1.6;}
 
   .soon-card{border:1px dashed var(--panel-line); border-radius:14px; padding:22px; text-align:center; color:var(--cream-dim);}
   .soon-card h3{color:var(--gold-bright);}
@@ -250,7 +388,7 @@
 
   /* ---------- stats ---------- */
   .stat-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-top:12px;}
-  .stat-card{background:var(--panel-2); border:1px solid var(--panel-line); border-radius:10px; padding:14px; text-align:center;}
+  .stat-card{background:linear-gradient(180deg, rgba(255,255,255,0.03), transparent); border:1px solid var(--panel-line); border-radius:14px; padding:16px 18px; text-align:center;}
   .stat-card .val{font-family:'JetBrains Mono',monospace; font-size:1.35rem; color:var(--gold-bright); font-weight:700;}
   .stat-card .val.neg{color:var(--bad);}
   .stat-card .val.pos{color:var(--good);}
@@ -297,7 +435,7 @@
     h1.hdr-name{font-size:1rem;}
     .hdr-sub{font-size:0.5rem; letter-spacing:0.2em;}
     nav.tabs{gap:4px; margin-top:8px;}
-    .tab-btn{padding:7px 10px; font-size:0.74rem; border-radius:8px 8px 0 0;}
+    .tab-btn{padding:7px 10px; font-size:0.74rem; border-radius:10px;}
     .tab-btn .soon-badge{display:none;}
     .card-box{padding:12px 14px; border-radius:10px;}
     .card-box h2{font-size:1rem;}
@@ -318,7 +456,8 @@
        ...; top:...") so overriding them here requires !important — CSS specificity gives
        inline styles priority over any selector, including media-query ones, unless
        marked important. */
-    .table-wrap{aspect-ratio:auto; min-height:0; max-width:100%;}
+    .table-fit{height:auto !important;}
+    .table-wrap{width:100% !important; height:auto !important; transform:none !important; background:none; box-shadow:none; border-radius:16px;}
     .felt{
       position:static; inset:auto; border-radius:16px; padding:10px 8px 12px;
       display:flex; flex-direction:column; gap:6px;
@@ -347,7 +486,189 @@
     .action-bar .amount{font-size:0.78rem;}
     .range-grid{max-width:100%;}
     .stat-grid{grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:8px;}
+    .result-banner{position:static; transform:none; margin:12px auto 0; animation:bannerPop 0.35s ease-out both;}
+    .pot-pile{height:58px; width:130px;}
+    .pot-chip{width:26px; height:26px;}
+    .result-banner .result-amt{font-size:1.5rem;}
   }
+
+  /* ================= START SCREEN (in-page, ported from Blackjack) ================= */
+  .start-screen{
+    position:fixed; inset:0; z-index:400; overflow-y:auto;
+    display:flex; align-items:flex-start; justify-content:center;
+    padding:clamp(14px, 2.4vw, 30px);
+    background:
+      radial-gradient(ellipse at 50% -10%, #1c4a33 0%, transparent 60%),
+      linear-gradient(180deg, #0c2318 0%, #071a11 100%);
+  }
+  html[data-skip-start] .start-screen{display:none;}
+  .start-shell{width:100%; max-width:860px; margin:auto;}
+  .start-screen .hero{
+    position:relative; padding:4.4%;   /* same rail-to-felt proportion as the play table */
+    border-radius:50% / 42%;
+    background:linear-gradient(168deg,#8a6236 0%,#4a3018 38%,#2f1d0e 62%,#7a5530 100%);
+    box-shadow:0 26px 50px rgba(0,0,0,0.55), inset 0 2px 0 rgba(255,255,255,0.20), inset 0 -3px 6px rgba(0,0,0,0.5);
+  }
+  .start-screen .hero-felt{
+    border-radius:50% / 42%;
+    background:
+      radial-gradient(ellipse 90% 70% at 50% 8%, rgba(255,255,255,0.10), transparent 60%),
+      radial-gradient(ellipse 120% 90% at 50% 108%, rgba(0,0,0,0.55), transparent 62%),
+      repeating-linear-gradient(135deg, rgba(255,255,255,0.014) 0 2px, transparent 2px 5px),
+      repeating-linear-gradient(45deg, rgba(0,0,0,0.02) 0 2px, transparent 2px 5px),
+      linear-gradient(180deg, var(--felt-a) 0%, #0f3d29 55%, var(--felt-b) 100%);
+    box-shadow:inset 0 0 0 2px rgba(0,0,0,0.45), inset 0 0 34px rgba(0,0,0,0.55), inset 0 3px 10px rgba(0,0,0,0.4);
+    padding:clamp(26px, 5vw, 56px) clamp(30px, 8vw, 104px) clamp(30px, 5.4vw, 58px);
+    text-align:center;
+  }
+  .start-screen .brand-hero{
+    --name-size:clamp(2.4rem, min(7vw, 14vh), 6rem);
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    margin-bottom:clamp(12px, 2.2vw, 20px);
+  }
+  .start-screen .fan{
+    position:relative; flex:0 0 auto; z-index:1; font-size:var(--name-size);
+    transform:rotate(-22deg) scale(0.92); width:1.35em; height:1.5em;
+  }
+  .start-screen .fan .court{position:absolute; left:10%; top:6%; width:1.16em; height:1.62em; border-radius:0.075em;}
+  .start-screen .fan .court.a{transform:rotate(6deg) translateX(7%); z-index:2;}
+  .start-screen .fan .court.b{transform:rotate(-12deg) translateX(-19%);}
+  .start-screen .fan .court .ix{font-size:0.31em;}
+  .start-screen .fan .court .pip{font-size:0.6em;}
+  .start-screen .wordmark{text-align:left; position:relative; z-index:2;}
+  .start-screen .wordmark .name{
+    font-family:'Playfair Display', serif; font-weight:900;
+    font-size:var(--name-size); line-height:0.9;
+    letter-spacing:-0.015em; color:var(--cream);
+    text-shadow:0 3px 0 rgba(0,0,0,0.35);
+  }
+  .start-screen .wordmark .name span{color:var(--gold-bright);}
+  .start-screen .wordmark .sub{
+    font-family:'JetBrains Mono', monospace; font-size:0.9rem;
+    letter-spacing:0.34em; text-transform:uppercase;
+    color:var(--gold-bright); margin-top:10px; padding-left:clamp(12px, 3.2vw, 46px);
+    text-shadow:0 1px 0 rgba(0,0,0,0.9), 0 2px 6px rgba(0,0,0,0.8);
+  }
+  @media (max-width: 560px){
+    .start-screen .brand-hero{flex-direction:column; gap:14px;}
+    .start-screen .wordmark{text-align:center;}
+    .start-screen .wordmark .sub{letter-spacing:0.24em; padding-left:0; text-align:center;}
+  }
+  .start-h1{
+    font-family:'Fraunces', serif; font-weight:600;
+    font-size:clamp(1.35rem, 3.1vw, 2rem); line-height:1.16; margin:0;
+  }
+  .start-h1 em{font-style:normal; color:var(--gold-bright);}
+  .start-screen .mission{
+    max-width:54ch; margin:clamp(12px,2.2vw,20px) auto 0;
+    font-size:clamp(0.9rem, 1.5vw, 1.05rem); line-height:1.58;
+    color:var(--cream); text-wrap:pretty;
+  }
+  .start-screen .mission b{color:var(--gold-bright); font-weight:700;}
+  .start-screen .mission-sub{
+    max-width:50ch; margin:11px auto 0;
+    font-size:clamp(0.76rem, 1.2vw, 0.86rem); line-height:1.55; color:var(--cream-dim);
+  }
+  .start-screen .actions{
+    display:flex; flex-wrap:wrap; gap:10px; justify-content:center;
+    margin-top:clamp(18px,2.8vw,26px);
+  }
+  .start-screen .actions .btn{padding:12px 20px; min-height:46px; font-size:0.9rem; white-space:nowrap;}
+  .start-screen .save-state{
+    margin-top:18px; font-family:'JetBrains Mono', monospace;
+    font-size:0.76rem; color:var(--cream-dim); min-height:1.3em;
+  }
+  .start-screen .save-state b{color:var(--gold-bright);}
+  .start-foot{
+    margin-top:20px; text-align:center; font-family:'JetBrains Mono', monospace;
+    font-size:0.72rem; color:var(--cream-dim); line-height:1.7;
+  }
+  /* The series rail, matching the one on the front door. Each trainer is its own repository,
+     so on GitHub Pages they're siblings under the same domain — hence the "../<slug>/" href. */
+  .series-rail{
+    display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:12px;
+    font-size:0.62rem; letter-spacing:0.14em; text-transform:uppercase;
+  }
+  .series-rail > *{
+    background:rgba(0,0,0,0.26); border:1px solid var(--panel-line);
+    border-radius:20px; padding:6px 13px; text-decoration:none; color:var(--cream-dim);
+  }
+  .series-rail a:hover{border-color:var(--gold); color:var(--gold-bright); text-decoration:none;}
+  .series-rail .series-here{border-color:var(--gold); color:var(--gold-bright);}
+  @media (max-height: 700px){ .series-rail{display:none;} }
+  @media (max-height: 700px){
+    .start-screen .mission-sub{display:none;}
+    .start-screen .hero-felt{padding:16px 20px 24px;}
+    .start-screen .brand-hero{margin-bottom:8px;}
+    .start-screen .mission{margin-top:10px;}
+    .start-foot{margin-top:12px;}
+  }
+  @media (max-width: 620px){
+    .start-screen .hero{border-radius:36px; padding:12px;}
+    .start-screen .hero-felt{border-radius:28px; padding:22px 18px 26px;}
+    .start-screen .actions .btn{flex:1 1 100%; justify-content:center;}
+  }
+
+  /* ================= OPTIONS: swatches with a hover preview ================= */
+  .swatch-grid{display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 10px;}
+  .swatch{
+    position:relative; width:38px; height:52px; padding:0; flex:0 0 auto;
+    border-radius:6px; border:2px solid transparent; cursor:pointer;
+    background:rgba(0,0,0,0.3);
+  }
+  .swatch .face{position:absolute; inset:0; border-radius:4px; overflow:hidden;}
+  .swatch.on{border-color:var(--gold-bright); box-shadow:0 0 0 2px rgba(232,193,79,0.3);}
+  .swatch .tip{
+    display:none; position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%);
+    z-index:60; padding:8px; border-radius:8px;
+    background:#0b2318; border:1px solid var(--gold);
+    box-shadow:0 10px 26px rgba(0,0,0,0.6); white-space:nowrap; text-align:center;
+  }
+  .swatch .tip .big{width:60px; height:84px; border-radius:6px; margin:0 auto 6px; border:2px solid transparent;}
+  .swatch .tip .nm{font-size:0.66rem; color:var(--cream); font-family:'JetBrains Mono', monospace; letter-spacing:0.06em;}
+  @media (hover: hover){ .swatch:hover .tip{display:block;} }
+  .swatch-note{font-size:0.72rem; color:var(--cream-dim); margin:-4px 0 12px;}
+
+  /* ================= THE POT: a real pile of chips that grows ================= */
+  .pot-pile{
+    position:relative; height:96px; margin:0 auto 6px; width:200px;
+    pointer-events:none;
+  }
+  .pot-chip{
+    position:absolute; width:30px; height:30px; margin-left:-15px; border-radius:50%;
+    box-shadow:0 1px 2px rgba(0,0,0,0.6), 0 3px 7px rgba(0,0,0,0.35),
+               inset 0 0 0 3px rgba(255,255,255,0.14), inset 0 -3px 3px rgba(0,0,0,0.3),
+               inset 0 2px 2px rgba(255,255,255,0.12);
+    border:1px dashed rgba(255,255,255,0.3);
+  }
+  .pot-chip.drop{animation:chipDrop 0.34s cubic-bezier(.2,.9,.3,1) backwards;}
+  @keyframes chipDrop{
+    from{ transform:translateY(-46px) scale(1.1) rotate(-8deg); opacity:0; }
+    to{ transform:none; opacity:1; }
+  }
+  .pot-empty{
+    position:absolute; left:50%; bottom:6px; transform:translateX(-50%);
+    width:96px; height:26px; border-radius:50%;
+    box-shadow:inset 0 0 0 1px rgba(233,215,160,0.16);
+  }
+
+  /* ================= the verdict card ================= */
+  .result-banner .result-amt{
+    display:block; font-family:'JetBrains Mono', monospace; font-weight:700;
+    font-size:2rem; margin-top:6px; padding-top:8px;
+    border-top:1px solid rgba(255,255,255,0.12);
+  }
+  .result-banner.win .result-amt{color:#7fd6a2;}
+  .result-banner.lose .result-amt{color:#e79a9a;}
+  .result-banner.push .result-amt{color:var(--cream-dim);}
+  .result-banner.win .result-title{animation:verdictFlash 0.42s steps(1) 3;}
+  @keyframes verdictFlash{50%{opacity:0.25;}}
+  @keyframes bannerPopBig{
+    from{opacity:0; transform:translate(-50%,-50%) scale(0.88);}
+    60%{opacity:1; transform:translate(-50%,-50%) scale(1.05);}
+    to{opacity:1; transform:translate(-50%,-50%) scale(1);}
+  }
+  .result-banner{animation:bannerPopBig 0.42s cubic-bezier(.2,.8,.3,1) both;}
 
   /* ================= SHORT / LANDSCAPE PHONE ================= */
   @media (max-height:480px) and (max-width:900px){
@@ -359,9 +680,46 @@
 </head>
 <body>
 
+<div class="start-screen" id="startScreen">
+  <div class="start-shell">
+    <div class="hero">
+      <div class="hero-felt">
+        <div class="brand-hero">
+          <div class="fan">
+            <span class="court a"><span class="ix">A<span class="su">&#9824;</span></span><span class="pip">&#9824;</span></span>
+            <span class="court b red"><span class="ix">K<span class="su">&#9829;</span></span><span class="pip">&#9829;</span></span>
+          </div>
+          <div class="wordmark">
+            <div class="name">Hold<span>'em</span></div>
+            <div class="sub">Probability Trainer</div>
+          </div>
+        </div>
+        <h1 class="start-h1">Learn the odds<br><em>before you post a blind</em></h1>
+        <p class="mission">Poker isn't hard because the maths is hard &mdash; <b>it's hard because you have thirty seconds, nine opponents, and no calculator</b>. This trainer drills all three: pot odds you can price in your head, ranges you can read from the action, and a bet you can size on purpose.</p>
+        <p class="mission-sub">Every decision you make is graded. Nothing here promises you a winning session &mdash; edge in poker is small and variance is enormous. What it promises is that when you sit down, the arithmetic is automatic.</p>
+        <div class="actions">
+          <button class="btn primary" id="ssNew">New Game<span class="key-badge">N</span></button>
+          <button class="btn" id="ssContinue">Continue Progress<span class="key-badge">C</span></button>
+          <button class="btn primary" id="ssResume" style="display:none;">Resume Table<span class="key-badge">R</span></button>
+          <button class="btn" id="ssOptions">Options<span class="key-badge">L</span></button>
+        </div>
+        <div class="save-state" id="ssState">Checking this device for saved progress&hellip;</div>
+      </div>
+    </div>
+    <footer class="start-foot">
+      <span id="ssVer">v0.51.0</span> &middot; <a href="#" id="ssManual">Manual &amp; how saving works</a> &middot; <a href="./index.html">Front door</a><br>
+      Practice only. Play for money at your own risk; the house always charges rake.
+      <div class="series-rail">
+        <span class="series-here">Hold&rsquo;em Trainer</span>
+        <a href="../Blackjack.trainer/">Blackjack Trainer &rarr;</a>
+      </div>
+    </footer>
+  </div>
+</div>
+
 <header>
   <div class="hdr-row">
-    <span class="brand">
+    <span class="brand" id="hdrBrand" style="cursor:pointer;" title="Hover to show the controls — click for the start screen">
       <span class="hdr-fan" aria-hidden="true">
         <span class="court a"><span class="ix">A<span class="su">&#9824;</span></span><span class="pip">&#9824;</span></span>
         <span class="court b red"><span class="ix">K<span class="su">&#9829;</span></span><span class="pip">&#9829;</span></span>
@@ -372,6 +730,7 @@
       </span>
     </span>
     <span style="display:flex; align-items:center; gap:8px;">
+      <button class="hdr-version" id="hdrTabsBtn" style="cursor:pointer; background:var(--panel);" title="Keep the controls on screen instead of letting them auto-hide">Pin ⌃</button>
       <button class="hdr-version" id="hdrMuteBtn" style="cursor:pointer; background:var(--panel);">🔊</button>
       <span class="hdr-version" id="versionTag">v0.1.0-skeleton</span>
     </span>
@@ -387,7 +746,7 @@
    Ported visual theme (palette / fonts / card-fan logo) from
    the Blackjack Counting Trainer for brand consistency.
    ========================================================= */
-const APP_VERSION = "v0.39.0";
+const APP_VERSION = "v0.51.0";
 
 /* ---------------- TAB DEFINITIONS ---------------- */
 const TABS = [
@@ -423,11 +782,13 @@ function switchTab(id){
   state.activeTab = id;
   renderTabBar();
   renderMain();
+  if(typeof setChromeHidden === 'function'){ setChromeHidden(false); scheduleChromeHide(); }
 }
 
 /* ---------------- GLOBAL STATE ---------------- */
 const state = {
   activeTab: 'play',
+  ui: { pinChrome:false },
   playMode: 'cash', // 'cash' | 'tournament' | 'career'
   mtt: null,
   career: null, // lazily created by newCareerState() on first use
@@ -435,7 +796,7 @@ const state = {
   table: null,     // holdem table game state (Play mode)
   quiz: { score:0, total:0, current:null, answered:false, mode:'glossary' },
   potodds: { score:0, total:0, current:null, revealed:false, outsDrill:{active:false, question:null, score:0, total:0}, pushFoldDrill:{active:false, question:null, score:0, total:0} },
-  audio: { muted:false, volume:0.6, ctx:null, music:{enabled:false, volume:0.35, playing:false, theme:'lounge', chordIndex:0, nextNoteTime:0, schedulerHandle:null} },
+  audio: { muted:false, volume:0.6, ctx:null, music:{enabled:true, volume:0.5, playing:false, theme:'lounge', step:0, nextNoteTime:0, schedulerHandle:null} },
 };
 
 /* =========================================================
@@ -489,8 +850,9 @@ function collectSaveData(){
     lifetime: state.lifetime,
     audio: {
       muted: state.audio.muted, volume: state.audio.volume,
-      music: { enabled: state.audio.music.enabled, volume: state.audio.music.volume }
+      music: { enabled: state.audio.music.enabled, volume: state.audio.music.volume, jazz: true }
     },
+    ui: { pinChrome: !!(state.ui && state.ui.pinChrome) },
     themes: { felt: FELT_THEME, deck: DECK_THEME },
     drillStats: {
       terminology:      { score: state.quiz.score, total: state.quiz.total },
@@ -511,7 +873,79 @@ function collectSaveData(){
     skillsTest: state.skillsTest ? { bestScore: state.skillsTest.bestScore, bestTotal: state.skillsTest.bestTotal, bestPct: state.skillsTest.bestPct } : null,
     flashcardsBest: state.flashcards ? state.flashcards.bestCorrect : 0,
     evCalc: state.evCalc ? { fieldSize: state.evCalc.fieldSize, buyIn: state.evCalc.buyIn, roiPct: state.evCalc.roiPct, bankroll: state.evCalc.bankroll, eventsForRange: state.evCalc.eventsForRange } : null,
+    session: collectSessionSave(),
   };
+}
+
+/* =========================================================
+   RESUMING A TABLE IN PROGRESS
+   Everything a hand depends on lives on the table object and is already plain data: the
+   remaining deck in its exact order, the board, every player's stack, contribution, folded
+   and all-in state, the dealer button, the blind level, and each AI's read on you. So the
+   honest way to resume is to persist the whole thing rather than try to reconstruct it —
+   reconstruction is what would quietly corrupt the odds.
+   Two things are deliberately NOT persisted: 'waiting' (an AI's think-timer, which no longer
+   exists after a reload — we restart the turn instead) and the transient speech bubbles and
+   stack animations, which are mid-flight UI rather than game state.
+   ========================================================= */
+function stripTableForSave(t){
+  if(!t) return null;
+  const copy = Object.assign({}, t);
+  copy.waiting = false;
+  copy.animatingStacks = {};
+  copy.players = t.players.map(p=>{
+    const q = Object.assign({}, p);
+    delete q.speech;
+    return q;
+  });
+  if(t.mttDissolved) copy.mttDissolved = t.mttDissolved;
+  return copy;
+}
+function collectSessionSave(){
+  const t = state.table;
+  if(!t || t.stage==='idle') return null;                 // nothing worth resuming
+  if(state.mtt && state.mtt.complete) return null;
+  if(t.tournament && t.tournament.complete) return null;
+  return {
+    playMode: state.playMode,
+    activeTab: state.activeTab,
+    table: stripTableForSave(t),
+    mtt: state.mtt ? Object.assign({}, state.mtt, {
+      otherTables: (state.mtt.otherTables||[]).map(stripTableForSave)
+    }) : null,
+    savedAt: new Date().toISOString(),
+  };
+}
+/* Kept out of state until the player asks for it, so "New Game" is never contaminated. */
+let pendingSession = null;
+function sessionSummary(s){
+  if(!s || !s.table) return null;
+  const t = s.table;
+  const human = (t.players||[]).find(p=>p.isHuman);
+  const stage = t.stage==='preflop' ? 'preflop' : t.stage;
+  if(s.mtt) return `multi-table tournament, level ${(s.mtt.level||0)+1}, hand #${t.handNum} (${stage})`;
+  if(t.tournament) return `tournament, level ${(t.tournament.level||0)+1}, hand #${t.handNum} (${stage})`;
+  return `cash table, hand #${t.handNum} (${stage})${human?`, your stack $${human.stack}`:''}`;
+}
+function resumeSession(){
+  const s = pendingSession;
+  if(!s || !s.table) return false;
+  state.playMode = s.playMode || state.playMode;
+  state.table = s.table;
+  state.mtt = s.mtt || null;
+  if(state.mtt) state.mtt.otherTables = s.mtt.otherTables || [];
+  state.table.waiting = false;
+  render();
+  // whoever was on the clock gets the clock back; if it was an AI, its turn restarts cleanly
+  // (its think-timer died with the old page) rather than the hand sitting frozen
+  const t = state.table;
+  if(t.stage!=='idle' && t.stage!=='showdown' && t.actingIdx>=0){
+    const acting = t.players.find(p=>p.id===t.actingIdx);
+    if(acting && !acting.isHuman) setTimeout(()=>{ if(state.table===t) maybeRunAI(t); }, 500);
+  }
+  tlog(t, 'Session resumed — picking up where you left off.');
+  render();
+  return true;
 }
 
 function saveProgress(){
@@ -552,9 +986,15 @@ function loadProgress(){
       if(typeof data.audio.muted==='boolean') state.audio.muted = data.audio.muted;
       if(typeof data.audio.volume==='number') state.audio.volume = data.audio.volume;
       if(data.audio.music){
-        if(typeof data.audio.music.enabled==='boolean') state.audio.music.enabled = data.audio.music.enabled;
+        // saves made before the house band existed had music off by default — don't inherit
+        // that silence, only a choice made since
+        if(data.audio.music.jazz && typeof data.audio.music.enabled==='boolean') state.audio.music.enabled = data.audio.music.enabled;
         if(typeof data.audio.music.volume==='number') state.audio.music.volume = data.audio.music.volume;
       }
+    }
+    if(data.ui && typeof data.ui.pinChrome==='boolean'){ state.ui.pinChrome = data.ui.pinChrome; }
+    if(data.session && data.session.table && Array.isArray(data.session.table.players)){
+      pendingSession = data.session;
     }
     if(data.themes){
       if(FELT_THEMES.some(f=>f.id===data.themes.felt)) FELT_THEME = data.themes.felt;
@@ -659,13 +1099,67 @@ function playNoise(dur, gainMul, filterFreq){
   noise.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
   noise.start();
 }
-function sfxDeal(){ playNoise(0.07, 0.5, 3200); }
-function sfxChip(){ playTone(760, 0.05, 'triangle', 0.35); playTone(1100, 0.04, 'triangle', 0.2); }
-function sfxFold(){ playNoise(0.12, 0.3, 900); }
-function sfxWin(){ playTone(660,0.1,'sine',0.35); playTone(880,0.1,'sine',0.3); playTone(1100,0.16,'sine',0.3); }
-function sfxCorrect(){ playTone(880,0.08,'sine',0.35); playTone(1320,0.12,'sine',0.3); }
-function sfxWrong(){ playTone(220,0.16,'sawtooth',0.25); }
-function sfxClick(){ playTone(500,0.03,'square',0.15); }
+/* The Blackjack trainer's own envelopes, ported wholesale so the two tables sound identical:
+   an attack/decay ramp per voice and an optional delay, which is what lets an arpeggio be a
+   single call instead of a pile of timers. */
+function sfxEnvelope(g, t0, attack, decay, peak){
+  g.gain.cancelScheduledValues(t0);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), t0 + attack);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + attack + decay);
+}
+function tone(freq, opts){
+  opts = opts || {};
+  if(state.audio.muted) return;
+  const ctx = getAudioCtx();
+  if(!ctx) return;
+  const t0 = ctx.currentTime + (opts.delay || 0);
+  const osc = ctx.createOscillator();
+  osc.type = opts.type || 'sine';
+  osc.frequency.value = freq;
+  const g = ctx.createGain();
+  osc.connect(g); g.connect(ctx.destination);
+  const dur = opts.dur ?? 0.18, attack = opts.attack ?? 0.005;
+  sfxEnvelope(g, t0, attack, dur, state.audio.volume * (opts.peak ?? 0.5));
+  osc.start(t0); osc.stop(t0 + attack + dur + 0.05);
+}
+function noiseBurst(opts){
+  opts = opts || {};
+  if(state.audio.muted) return;
+  const ctx = getAudioCtx();
+  if(!ctx) return;
+  const t0 = ctx.currentTime + (opts.delay || 0);
+  const dur = opts.dur ?? 0.06;
+  const size = Math.max(1, Math.floor(ctx.sampleRate * (dur + 0.05)));
+  const buf = ctx.createBuffer(1, size, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for(let i=0;i<size;i++) data[i] = Math.random()*2-1;
+  const src = ctx.createBufferSource(); src.buffer = buf;
+  const filt = ctx.createBiquadFilter();
+  filt.type = opts.filterType || 'bandpass';
+  filt.frequency.value = opts.filterFreq ?? 2500;
+  filt.Q.value = opts.q ?? 1;
+  const g = ctx.createGain();
+  src.connect(filt); filt.connect(g); g.connect(ctx.destination);
+  sfxEnvelope(g, t0, 0.002, dur, state.audio.volume * (opts.peak ?? 0.4));
+  src.start(t0); src.stop(t0 + dur + 0.05);
+}
+const arp = (steps, base, opts)=> steps.forEach((s,i)=>tone(base*Math.pow(2,s/12), Object.assign({delay:i*(opts.step||0.07)}, opts)));
+function sfxDeal(){ noiseBurst({dur:0.05, peak:0.3, filterFreq:3200, q:0.7}); }
+function sfxChip(){ tone(1500,{type:'sine',dur:0.05,peak:0.25}); tone(2200,{type:'sine',dur:0.04,peak:0.15,delay:0.02}); }
+function sfxFold(){ noiseBurst({dur:0.12, peak:0.18, filterFreq:900, filterType:'lowpass'}); }
+function sfxShuffle(){ for(let i=0;i<6;i++) noiseBurst({dur:0.04,peak:0.12,filterFreq:2000+Math.random()*1500,delay:i*0.05,q:0.8}); }
+function sfxWin(){ arp([0,4,7,12], 220, {type:'triangle',dur:0.22,peak:0.3}); }
+function sfxPush(){ tone(330,{type:'sine',dur:0.18,peak:0.2}); }
+function sfxCollect(){ tone(220,{type:'sawtooth',dur:0.2,peak:0.2}); tone(180,{type:'sawtooth',dur:0.25,peak:0.18,delay:0.1}); }
+function sfxCorrect(){ tone(880,{type:'sine',dur:0.15,peak:0.25}); }
+function sfxWrong(){ tone(200,{type:'square',dur:0.15,peak:0.12}); }
+function sfxClick(){ tone(700,{type:'triangle',dur:0.03,peak:0.12}); }
+function sfxMilestone(){ arp([0,4,7,12,16], 330, {type:'sine',dur:0.3,peak:0.28,step:0.09}); }
+/* the two sounds that carry a whole hand: a rising major fanfare when the pot comes your
+   way, a slow falling sting when it doesn't. Both stack delayed tones, same as Blackjack. */
+function sfxFanfare(){ arp([0,4,7,12,16,19], 220, {type:'triangle',dur:0.25,peak:0.32,step:0.06}); }
+function sfxSting(){ arp([0,-3,-7], 220, {type:'sine',dur:0.28,peak:0.22,step:0.09}); }
 
 /* =========================================================
    BACKGROUND MUSIC — procedurally generated chord loops, same
@@ -675,64 +1169,94 @@ function sfxClick(){ playTone(500,0.03,'square',0.15); }
    lookahead scheduler (schedule ~2s of audio ahead, re-check every
    250ms) so timing stays accurate regardless of setTimeout jitter.
    ========================================================= */
-const MUSIC_PROGRESSIONS = {
-  lounge: [ // slow, relaxed minor-key pad progression (Am - G - F - G), 4s per chord
-    {notes:[220.00,261.63,329.63], dur:4},
-    {notes:[196.00,246.94,293.66], dur:4},
-    {notes:[174.61,220.00,261.63], dur:4},
-    {notes:[196.00,246.94,293.66], dur:4},
-  ],
-  tense: [ // shorter, more clipped chords for a tighter, higher-stakes feel
-    {notes:[220.00,261.63,311.13], dur:2.2},
-    {notes:[233.08,277.18,349.23], dur:2.2},
-    {notes:[220.00,261.63,329.63], dur:2.2},
-    {notes:[196.00,233.08,293.66], dur:2.2},
-  ],
-  career: [ // warmer major-key I-vi-IV-V "journey" progression for the Career home screen
-    {notes:[261.63,329.63,392.00], dur:3.5},
-    {notes:[220.00,261.63,329.63], dur:3.5},
-    {notes:[174.61,220.00,261.63], dur:3.5},
-    {notes:[196.00,246.94,293.66], dur:3.5},
-  ],
-  triumphant: [ // bright, faster I-IV-V-I fanfare-like progression, an octave up, for a tournament win screen
-    {notes:[523.25,659.25,783.99], dur:2},
-    {notes:[349.23,440.00,523.25], dur:2},
-    {notes:[392.00,493.88,587.33], dur:2},
-    {notes:[523.25,659.25,783.99], dur:2},
-  ],
+/* The house band: the same synthesized lounge-jazz trio the Blackjack trainer runs —
+   walking bass, brushed hi-hat, comping chords on the swung upbeats. Each mood is a
+   different tune from the same trio, so the room never changes character mid-session. */
+const JAZZ_THEMES = {
+  lounge: { name:'The Green Room', bpm:92,
+    chords:[[293.66,349.23,440.00,523.25],[196.00,246.94,293.66,349.23],[261.63,329.63,392.00,493.88],[220.00,261.63,329.63,392.00]],
+    bass:  [[146.83,164.81,174.61,196.00],[98.00,110.00,123.47,146.83],[130.81,146.83,164.81,196.00],[110.00,123.47,130.81,146.83]] },
+  tense: { name:'The Blue Room', bpm:84,
+    chords:[[220.00,261.63,329.63,392.00],[146.83,185.00,220.00,261.63],[196.00,246.94,293.66,369.99],[164.81,196.00,246.94,293.66]],
+    bass:  [[110.00,123.47,130.81,146.83],[73.42,82.41,92.50,98.00],[98.00,110.00,123.47,146.83],[82.41,92.50,98.00,110.00]] },
+  career: { name:'The Velvet Lounge', bpm:80,
+    chords:[[233.08,293.66,349.23,440.00],[196.00,233.08,293.66,349.23],[261.63,311.13,392.00,466.16],[174.61,220.00,261.63,311.13]],
+    bass:  [[116.54,130.81,146.83,174.61],[98.00,110.00,116.54,146.83],[130.81,146.83,155.56,196.00],[87.31,98.00,110.00,130.81]] },
+  triumphant: { name:'The Gold Room', bpm:104,
+    chords:[[174.61,220.00,261.63,329.63],[164.81,196.00,246.94,293.66],[146.83,174.61,220.00,261.63],[196.00,246.94,293.66,349.23]],
+    bass:  [[87.31,98.00,110.00,130.81],[82.41,92.50,98.00,123.47],[73.42,82.41,87.31,98.00],[98.00,110.00,123.47,146.83]] },
 };
 
-function scheduleMusicChord(chord, startTime){
-  const ctx = getAudioCtx();
-  if(!ctx) return;
-  const vol = state.audio.music.volume;
-  chord.notes.forEach((freq, i)=>{
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.value = freq;
-    const peak = Math.max(0.0001, vol * (i===0?0.16:0.1));
-    gain.gain.setValueAtTime(0.0001, startTime);
-    gain.gain.linearRampToValueAtTime(peak, startTime + 0.9);
-    gain.gain.linearRampToValueAtTime(0.0001, startTime + chord.dur);
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.start(startTime); osc.stop(startTime + chord.dur + 0.1);
-  });
+function musEnv(g, t0, attack, decay, peak){
+  g.gain.cancelScheduledValues(t0);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), t0 + attack);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + attack + decay);
 }
-
-function musicSchedulerTick(){
+let musicNoiseBufCache = null;
+function musicNoiseBuffer(ctx){
+  if(musicNoiseBufCache) return musicNoiseBufCache;
+  const size = Math.floor(ctx.sampleRate * 0.05);
+  const buf = ctx.createBuffer(1, size, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for(let i=0;i<size;i++) data[i] = Math.random()*2-1;
+  musicNoiseBufCache = buf;
+  return buf;
+}
+let musicLoopToken = 0;
+function musicSchedulerTick(token){
   const m = state.audio.music;
-  if(!m.playing) return;
+  if(!m.playing || token !== musicLoopToken) return; // a stale loop from an earlier start
   const ctx = getAudioCtx();
   if(!ctx){ m.playing = false; return; }
-  const progression = MUSIC_PROGRESSIONS[m.theme] || MUSIC_PROGRESSIONS.lounge;
-  while(m.nextNoteTime < ctx.currentTime + 2.0){
-    const chord = progression[m.chordIndex % progression.length];
-    scheduleMusicChord(chord, m.nextNoteTime);
-    m.nextNoteTime += chord.dur;
-    m.chordIndex++;
+  if(ctx.state !== 'running' || state.audio.muted){
+    // keep the loop alive but silent until the context is unlocked / unmuted
+    m.nextNoteTime = ctx.currentTime + 0.1;
+    m.schedulerHandle = setTimeout(()=>musicSchedulerTick(token), 250);
+    return;
   }
-  m.schedulerHandle = setTimeout(musicSchedulerTick, 250);
+  const theme = JAZZ_THEMES[m.theme] || JAZZ_THEMES.lounge;
+  const beatDur = 60 / theme.bpm;
+  const swingLong = beatDur * (2/3), swingShort = beatDur * (1/3);
+  const vol = m.volume;
+  while(m.nextNoteTime < ctx.currentTime + 0.6){
+    const bar = Math.floor(m.step / 8) % theme.chords.length;
+    const beatInBar = m.step % 8;
+    const chord = theme.chords[bar];
+    const bassNotes = theme.bass[bar];
+    const t = m.nextNoteTime;
+    if(beatInBar % 2 === 0){ // walking bass on the quarter notes
+      const osc = ctx.createOscillator();
+      osc.type = 'triangle'; osc.frequency.value = bassNotes[Math.floor(beatInBar/2) % bassNotes.length];
+      const g = ctx.createGain();
+      osc.connect(g); g.connect(ctx.destination);
+      musEnv(g, t, 0.01, beatDur*0.9, vol*0.5);
+      osc.start(t); osc.stop(t + beatDur);
+    }
+    if(beatInBar === 3 || beatInBar === 7){ // comping chord on the swung upbeats of 2 and 4
+      chord.forEach((freq,i)=>{
+        const osc = ctx.createOscillator();
+        osc.type = 'sine'; osc.frequency.value = freq;
+        const g = ctx.createGain();
+        osc.connect(g); g.connect(ctx.destination);
+        musEnv(g, t, 0.02, beatDur*1.3, vol*(0.22 - i*0.03));
+        osc.start(t); osc.stop(t + beatDur*1.5);
+      });
+    }
+    const src = ctx.createBufferSource(); // brushed hi-hat on every swung eighth
+    src.buffer = musicNoiseBuffer(ctx);
+    const filt = ctx.createBiquadFilter();
+    filt.type = 'highpass'; filt.frequency.value = 6000;
+    const g = ctx.createGain();
+    src.connect(filt); filt.connect(g); g.connect(ctx.destination);
+    musEnv(g, t, 0.001, 0.04, vol*(beatInBar % 2 === 0 ? 0.06 : 0.03));
+    src.start(t); src.stop(t + 0.05);
+
+    const onBeat = (m.step % 2 === 0);
+    m.step++;
+    m.nextNoteTime += onBeat ? swingLong : swingShort;
+  }
+  m.schedulerHandle = setTimeout(()=>musicSchedulerTick(token), 100);
 }
 
 function startMusic(){
@@ -740,19 +1264,40 @@ function startMusic(){
   if(m.playing) return;
   const ctx = getAudioCtx();
   if(!ctx) return;
+  if(m.schedulerHandle){ clearTimeout(m.schedulerHandle); m.schedulerHandle = null; }
+  musicLoopToken++;                 // invalidates any loop still in flight
   m.playing = true;
-  m.chordIndex = 0;
+  m.step = 0;
   m.nextNoteTime = ctx.currentTime + 0.1;
-  musicSchedulerTick();
+  musicSchedulerTick(musicLoopToken);
 }
 function stopMusic(){
   const m = state.audio.music;
   m.playing = false;
+  musicLoopToken++;
   if(m.schedulerHandle){ clearTimeout(m.schedulerHandle); m.schedulerHandle = null; }
 }
 function setMusicTheme(theme){
   if(state.audio.music.theme === theme) return;
-  state.audio.music.theme = theme; // takes effect at the next chord boundary — no abrupt cut
+  // switch tunes in place: the step counter keeps running, so the new theme picks up at
+  // the next bar instead of restarting and layering over notes already scheduled
+  state.audio.music.theme = theme;
+}
+/* browsers block audio until the first real gesture, so the trio waits for one */
+function unlockAudioOnce(){
+  const ctx = getAudioCtx();
+  if(!ctx) return;
+  const go = ()=>{ if(state.audio.music.enabled && !state.audio.muted) startMusic(); };
+  if(ctx.state === 'suspended') ctx.resume().then(go).catch(()=>{});
+  else go();
+}
+if(typeof document !== 'undefined' && document.addEventListener){
+  document.addEventListener('pointerdown', unlockAudioOnce, {once:true});
+  document.addEventListener('keydown', unlockAudioOnce, {once:true});
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.hidden) stopMusic();
+    else if(state.audio.music.enabled && !state.audio.muted) startMusic();
+  });
 }
 function desiredMusicTheme(){
   const t = state.table;
@@ -814,15 +1359,100 @@ function removeUsed(deck, used){
   return deck.filter(c=>!usedKeys.has(cardKey(c)));
 }
 
+/* render() rebuilds the whole table on every action, which used to replay the deal animation
+   on every card each time — the flashing. Cards now only animate the first time they appear:
+   we remember how many were on screen last render and animate just the new ones. */
+let cardsShown = { hand:-1, board:0, hole:{} };
+function freshBoard(t, i){
+  if(cardsShown.hand !== t.handNum){ cardsShown = {hand:t.handNum, board:0, hole:{}}; }
+  return i >= cardsShown.board;
+}
+function freshHole(t, p, i){
+  if(cardsShown.hand !== t.handNum){ cardsShown = {hand:t.handNum, board:0, hole:{}}; }
+  return i >= (cardsShown.hole[p.id] || 0);
+}
+function markCardsShown(t){
+  if(cardsShown.hand !== t.handNum) cardsShown = {hand:t.handNum, board:0, hole:{}};
+  cardsShown.board = t.board.length;
+  t.players.forEach(p=>{ cardsShown.hole[p.id] = p.holeCards.length; });
+}
 function cardHTML(card, opts={}){
   const size = opts.size ? ` ${opts.size}` : '';
-  if(!card) return `<div class="pcard back${size}"></div>`;
+  const deal = opts.fresh ? ' deal' : '';
+  if(!card) return `<div class="pcard back${size}${deal}"></div>`;
   const red = SUIT_RED[card.s] ? ' red' : '';
   const lab = rankLabel(card.r);
-  return `<div class="pcard${red}${size}">
-    <div class="corner">${lab}<span class="suit">${SUIT_SYM[card.s]}</span></div>
-    <div class="center">${SUIT_SYM[card.s]}</div>
+  const face = `<div class="corner">${lab}<span class="suit">${SUIT_SYM[card.s]}</span></div>
+    <div class="center">${SUIT_SYM[card.s]}</div>`;
+  // opts.zoom: hovering pops a proper full-size card above the table — rank in both corners,
+  // big pip through the middle, the same double rule the small cards print
+  return `<div class="pcard${red}${size}${deal}">
+    ${face}
   </div>`;
+}
+/* the full-size card used in the hover preview — rank in both corners, big pip through the
+   middle, the same double rule the small cards print */
+function bigCardHTML(card){
+  if(!card) return '<span class="pcard-big back"></span>';
+  const red = SUIT_RED[card.s] ? ' red' : '';
+  const lab = rankLabel(card.r);
+  return `<span class="pcard-big${red}">
+    <span class="pb-tl">${lab}<span>${SUIT_SYM[card.s]}</span></span>
+    <span class="pb-mid">${SUIT_SYM[card.s]}</span>
+    <span class="pb-br">${lab}<span>${SUIT_SYM[card.s]}</span></span>
+  </span>`;
+}
+/* Hovering any card in the group shows the WHOLE group full size — your hand together, or
+   the entire board — because that's the thing you actually want to read. */
+function zoomGroupHTML(cards, opts){
+  const list = (cards||[]).filter(Boolean);
+  if(!list.length) return '';
+  // The table is a scaled element, which makes it its own stacking context — the preview can
+  // never paint above the sticky header no matter how high its z-index. So a seat near the top
+  // of the felt drops its preview downward instead, where there's room for it.
+  const down = opts && opts.down ? ' down' : '';
+  return `<span class="group-zoom${down}">${list.map(bigCardHTML).join('')}</span>`;
+}
+
+/* The pot as a real pile of chips on the felt: one chip per betting unit (capped so a
+   monster pot stays on the table), stacked into columns that grow taller as money goes in.
+   Only chips added since the last render animate, so the pile builds instead of re-dealing. */
+let potPileShown = 0;
+/* Deterministic jitter per chip index, so a chip keeps its exact spot as the pile grows
+   (a fresh Math.random() every render would make the whole pile twitch). */
+function pileNoise(i, salt){
+  const x = Math.sin((i+1) * 12.9898 + salt * 78.233) * 43758.5453;
+  return x - Math.floor(x); // 0..1
+}
+function potPileHTML(t){
+  const unit = Math.max(1, Math.round((t.cfg.bigBlind || 2) / 2));
+  const wanted = Math.min(54, Math.floor((t.pot || 0) / unit));
+  if(wanted <= 0){
+    potPileShown = 0;
+    return '<div class="pot-pile"><div class="pot-empty"></div></div>';
+  }
+  // chips heap into a loose cluster of leaning stacks rather than tidy columns:
+  // stacks sit on a shallow ellipse, each chip nudged a pixel or two off its neighbour
+  const stacks = Math.min(7, 1 + Math.floor(wanted / 7));
+  const perStack = Math.ceil(wanted / stacks);
+  let out = '';
+  for(let i=0;i<wanted;i++){
+    const s = Math.floor(i / perStack);
+    const row = i % perStack;
+    const ang = (s / Math.max(1,stacks)) * Math.PI * 2 + 0.7;
+    const spread = stacks === 1 ? 0 : 1;
+    const cx = 50 + Math.cos(ang) * 26 * spread + (pileNoise(i,1)-0.5)*3.4;
+    const cy = 10 + Math.sin(ang) * 9 * spread + (pileNoise(i,2)-0.5)*2.6;
+    const tier = [3,1,2,4,1,2,3][s % 7];
+    const lean = (pileNoise(s,4)-0.5) * 2.2; // each stack leans its own way
+    const left = cx + row * lean * 0.5;
+    const bottom = cy + row * 4.4;
+    const fresh = i >= potPileShown;
+    const delay = fresh ? (i - potPileShown) * 24 : 0;
+    out += `<span class="pot-chip c${tier}${fresh?' drop':''}" style="left:${left.toFixed(1)}%; bottom:${bottom.toFixed(1)}px; z-index:${row*2 + (s%2)}${fresh?`; animation-delay:${delay}ms`:''}"></span>`;
+  }
+  potPileShown = wanted;
+  return `<div class="pot-pile">${out}</div>`;
 }
 
 /* Purely decorative chip-stack icon for bet/pot amounts, sized by rough denomination tier. */
@@ -966,6 +1596,155 @@ const TABLE_CHATTER = [
 const DEALER_SHIFT_INTERVAL_MIN = 20;
 const DEALER_SHIFT_INTERVAL_MAX = 35;
 const PERSONALITIES = ['tight','loose','aggro','balanced'];
+
+/* =========================================================
+   TABLE TALK — a distinct voice per seat. Every regular has their own register: what they
+   say putting money in, what they say when they take a pot, and what they say when you take
+   one off them (dejected if the pot went to another AI, a jab if it went to you). Loss lines
+   scale with how much of their stack went with it.
+   ========================================================= */
+const TABLE_VOICES = {
+  Riko: { // young online kid, clipped, all upside
+    bet:['Pressure.','Let’s go.','Raise. Easy.','Sizing up.','You’re not calling this.'],
+    call:['Sure, call.','Price is fine.','I’m there.','Pot odds, buddy.'],
+    check:['Check.','Free card, thanks.','I’ll take a look.'],
+    fold:['Nah.','Fold. Next.','Not this one.'],
+    winSmall:['Yep.','Called it.','Standard.'],
+    winBig:['I KNEW IT!','Ship it! Ship it!','That’s the read of the year.'],
+    dejectedSmall:['Whatever.','Variance.','Fine.'],
+    dejectedBig:['Are you serious right now?','That’s so rigged.','Unreal. Unreal.'],
+    jabSmall:['Lucky.','Sure, run good.'],
+    jabBig:['You didn’t even know what you had.','Congrats on the sunrun, chief.','Play like that forever, please.'],
+  },
+  Dale: { // good-natured hauler, folksy, means it
+    bet:['I’ll bump it.','Let’s make it interesting.','Puttin’ some in.','Raise, why not.'],
+    call:['I’ll come along.','Curiosity’s cheap.','Call, sure.'],
+    check:['Check ’er.','I’m good.','No bet from me.'],
+    fold:['Y’all have fun.','That’s a fold.','Too rich for my blood.'],
+    winSmall:['Well how ’bout that.','Appreciate it, folks.','Nice little one.'],
+    winBig:['Yes sir! Yes SIR!','Whoo! That’ll pay the truck note.','Been waitin’ on that all night.'],
+    dejectedSmall:['Ah well.','Story of my week.','That’s poker.'],
+    dejectedBig:['Oh, that hurts. That surely hurts.','Was fun while it lasted, boys.','Gonna feel that one tomorrow.'],
+    jabSmall:['Beginner’s luck, friend.','You got there.'],
+    jabBig:['Son, you had no business callin’ that.','Even a blind hog finds an acorn.'],
+  },
+  Priya: { // precise, quantitative, never raises her voice
+    bet:['Two-thirds pot.','That’s the correct size.','Betting for value.','Raise — I have the range advantage.'],
+    call:['Calling. I have the equity.','That’s a call at this price.','Marginally profitable. Call.'],
+    check:['Check. Wrong spot to bet.','No value in betting here.','Check back.'],
+    fold:['Fold. Not enough equity.','That’s a clear fold.','Below threshold.'],
+    winSmall:['As expected.','That’s the math.','Correct line.'],
+    winBig:['That was the whole plan.','Textbook. Genuinely textbook.','I had you drawing thin the entire way.'],
+    dejectedSmall:['Fine. Correct play, bad result.','Within variance.','Noted.'],
+    dejectedBig:['I was an 84% favourite. Eighty-four.','I would take that again every time.','That is going to sit with me.'],
+    jabSmall:['You called that with what, exactly?','Result-oriented, but sure.'],
+    jabBig:['You were drawing to two cards and you knew it.','That call is a leak. Enjoy it while it works.'],
+  },
+  Owen: { // gloomy, expects the worst, is usually right
+    bet:['I’ll bet, I suppose.','Might as well.','Raising. It won’t work.'],
+    call:['Call. Reluctantly.','I’ll pay to see it.','Fine, call.'],
+    check:['Check. Nothing here.','No.','I’ll pass.'],
+    fold:['Of course. Fold.','Naturally.','Here we go again. Fold.'],
+    winSmall:['Huh. A pot.','I’ll take it before it’s taken back.','Small mercies.'],
+    winBig:['I don’t believe it. I actually don’t.','A big one? For me?','Don’t get used to this, Owen.'],
+    dejectedSmall:['Yes. Obviously.','That tracks.','As always.'],
+    dejectedBig:['I saw that coming and drove into it anyway.','Every single time. Every one.','Deal me out a second, would you.'],
+    jabSmall:['Enjoy it. It’s temporary.','Everyone’s lucky once.'],
+    jabBig:['You’ll give it all back. They always do.','That was the worst-played hand I’ve seen tonight, and it won.'],
+  },
+  Marta: { // ice. minimal words, maximum pressure
+    bet:['Raise.','More.','I’ll put you in.','Bet.'],
+    call:['Call.','Fine.','I look.'],
+    check:['Check.','No.'],
+    fold:['Out.','No.'],
+    winSmall:['Mine.','Naturally.'],
+    winBig:['Yes.','I knew before the flop.','Thank you. Truly.'],
+    dejectedSmall:['Hm.','Take it.'],
+    dejectedBig:['...','Deal.','I don’t want to talk.'],
+    jabSmall:['Lucky.','Hm. Lucky.'],
+    jabBig:['You have no idea what you just did.','That was not skill. Remember that.'],
+  },
+  Sam: { // chatty tourist, thrilled to be here
+    bet:['Ooh, okay — raise!','Let’s gamble!','I’m raising! Is that allowed? Raising!'],
+    call:['Call! Sure! Why not!','I wanna see it!','In for a penny!'],
+    check:['Check! Free is my favourite price.','I’ll just wait here.'],
+    fold:['Nope nope nope. Fold.','Ohh, I’m out.','Yikes. Folding.'],
+    winSmall:['Hey! Hey, look at that!','I won one! I won one.','Woohoo, little one!'],
+    winBig:['OH MY GOD. YES!','I’m calling my wife!','Is this what it feels like?! Amazing!'],
+    dejectedSmall:['Aw, dang.','Worth it. Kind of.','Ohh, so close!'],
+    dejectedBig:['Oh no. Oh no no no. That was my night.','Well, that’s the vacation fund.','Ohhh, my stomach.'],
+    jabSmall:['Nice one! Jerk.','Good for you. Sort of.'],
+    jabBig:['You beat a tourist. Big man.','I hope that money brings you great sadness.'],
+  },
+  Levi: { // old-timer, talks in aphorisms
+    bet:['A little something for the pot.','Raise, and may it teach you.','I’ll put in a bet.'],
+    call:['I’ll call and learn something.','Every call buys a story.','Call.'],
+    check:['Patience is free. Check.','I’ll wait.','Check.'],
+    fold:['Discretion. Fold.','A fold is a bet on tomorrow.','Not this hand.'],
+    winSmall:['Kindly.','Thank you, gentlemen.','Slow and steady.'],
+    winBig:['Forty years. Still feels good.','Well now. That’s a hand to remember.','The old dog eats tonight.'],
+    dejectedSmall:['So it goes.','The river gives, the river takes.','Ah, well.'],
+    dejectedBig:['That is a hard way to learn an old lesson.','I’ve lost bigger. Not many times.','Deal me in again. I’ll be along.'],
+    jabSmall:['The young are lucky. It passes.','Enjoy it, kid.'],
+    jabBig:['Luck is a loan, son. It gets called in.','You’ll misplay that same hand for years now.'],
+  },
+  Nadia: { // needling, sarcastic, enjoys herself
+    bet:['Raise. Let’s see who’s brave.','More money, please.','I’ll raise. You’ll fold.'],
+    call:['Call. This should be fun.','Oh, I’m calling.','Sure, I’ll pay for the show.'],
+    check:['Check. Your move, hero.','Nothing from me. Yet.'],
+    fold:['Fold. Enjoy the crumbs.','You can have that one.'],
+    winSmall:['Obviously.','Thank you, darling.','Mine, I think.'],
+    winBig:['YES. Oh, that’s delicious.','I told you I’d raise. You never listen.','And that’s why I sit to your left.'],
+    dejectedSmall:['Cute.','Fine, fine.','Take your little pot.'],
+    dejectedBig:['You are joking. That is a joke.','I hate this game. I love it. I hate it.','That was outrageous and you know it.'],
+    jabSmall:['Lucky little thing.','Sure. Skill.'],
+    jabBig:['You played that like a coupon and got a jackpot.','Write that hand down — you’ll never do it right again.'],
+  },
+  'Bonnie Valentine': { // the boss: theatrical, velvet, faintly threatening
+    bet:['Let’s raise the stakes, darling.','More. I insist.','A raise — for the drama.','I’ll put you all-in, sweetheart.'],
+    call:['Call. I do love a slow reveal.','Oh, I’ll call. I want to see your face.','Call, darling.'],
+    check:['Check. Let it breathe.','I’ll let you hang yourself.'],
+    fold:['I’ll allow you this one.','Fold. Take your little scene.'],
+    winSmall:['Of course.','Thank you, sweetheart.','Mine, obviously.'],
+    winBig:['Cut. Print. Perfect.','Oh, I have waited all evening for that.','That, darling, is how you end an act.'],
+    dejectedSmall:['Hm. Amusing.','Enjoy the intermission.'],
+    dejectedBig:['Do that again and I will remember it.','You have my attention now. That’s worse for you.','How very theatrical of you.'],
+    jabSmall:['Beginner’s luck is still luck.','How sweet for you.'],
+    jabBig:['You didn’t win that, dear — I lent it to you.','Screaming is my job, sweetheart. You just do the flailing.'],
+  },
+};
+const TABLE_VOICE_FALLBACK = {
+  bet:['Raise.','I’ll bet.'], call:['Call.','I’m in.'], check:['Check.'], fold:['Fold.'],
+  winSmall:['Mine.'], winBig:['Yes! Get in!'],
+  dejectedSmall:['Ah, well.'], dejectedBig:['That one hurt.'],
+  jabSmall:['Lucky.'], jabBig:['You had no idea what you were doing.'],
+};
+function voiceFor(name){ return TABLE_VOICES[name] || TABLE_VOICE_FALLBACK; }
+function voiceLine(name, key){
+  const v = voiceFor(name);
+  const list = (v[key] && v[key].length) ? v[key] : (TABLE_VOICE_FALLBACK[key] || []);
+  if(!list.length) return null;
+  return list[Math.floor(Math.random()*list.length)];
+}
+let speechSweepTimer = null;
+/* Bubbles live on the player object so they survive the re-renders that the stack animation
+   and the AI turn loop trigger — a floating DOM node would be wiped by the next render. */
+function sayAt(t, playerId, text, ms){
+  if(!text) return;
+  const p = t.players.find(x=>x.id===playerId);
+  if(!p) return;
+  const dur = ms || 2800;
+  p.speech = { text, until: Date.now() + dur };
+  if(typeof window !== 'undefined' && window.setTimeout){
+    clearTimeout(speechSweepTimer);
+    speechSweepTimer = setTimeout(()=>{ if(state.table===t) render(); }, dur + 80);
+  }
+}
+function maybeSay(t, p, key, chance){
+  if(p.isHuman) return;
+  if(Math.random() > (chance==null?1:chance)) return;
+  sayAt(t, p.id, voiceLine(p.name, key));
+}
 
 /* ---------------- TOURNAMENT MODE ---------------- */
 const TOURNAMENT_BLIND_LEVELS = [
@@ -1514,7 +2293,39 @@ function nextIdx(t, from){
   return -1;
 }
 
+/* A cash table refills itself. When you bust an AI in a cash game the seat doesn't stay
+   empty — that player either reloads or someone new sits down, which is exactly what happens
+   in a real cardroom and is the only reason the table can keep running after you win every
+   stack. Tournaments deliberately skip this: busting out is the whole point there. */
+function refillCashSeats(t){
+  if(t.tournament || t.cfg.mtt) return;
+  const busted = t.players.filter(p=>!p.isHuman && p.stack<=0);
+  if(!busted.length) return;
+  // every name currently AT the table is taken, busted or not — otherwise a seat can be
+  // "replaced" by the same person who just busted out of it
+  const taken = new Set(t.players.map(p=>p.name));
+  const freeNames = AI_NAMES.filter(n=>!taken.has(n));
+  busted.forEach((p,i)=>{
+    const fresh = freeNames.length ? freeNames[Math.floor(Math.random()*freeNames.length)] : null;
+    if(fresh){
+      // a new face buys in
+      freeNames.splice(freeNames.indexOf(fresh),1);
+      taken.add(fresh);
+      tlog(t, `${p.name} busts out. ${fresh} sits down with $${t.cfg.startStack}`);
+      p.name = fresh;
+      p.personality = PERSONALITIES[Math.floor(Math.random()*PERSONALITIES.length)];
+      p.speech = null;
+    } else {
+      // every name is already at the table, so the busted player reloads instead
+      tlog(t, `${p.name} reloads for $${t.cfg.startStack}`);
+    }
+    p.stack = t.cfg.startStack;
+    p.sitOut = false;
+  });
+}
+
 function startHand(t){
+  refillCashSeats(t);
   const players = activePlayers(t).filter(p=>p.stack>0);
   if(players.length<2){ tlog(t,'Not enough players with chips. Reset the table.'); render(); return; }
   t.lastHandResult = null;
@@ -1567,6 +2378,7 @@ function startHand(t){
   t.dealerIdx = (t.dealerIdx+1) % list.length;
   list.forEach(p=>{ p.holeCards=[deal(t)]; });
   list.forEach(p=>{ p.holeCards.push(deal(t)); });
+  sfxShuffle();
   sfxDeal();
 
   const dealerPlayer = list[t.dealerIdx];
@@ -1639,10 +2451,12 @@ function applyAction(t, playerId, action){
   if(action.type==='fold'){
     p.folded = true; p.acted = true;
     sfxFold();
+    maybeSay(t, p, 'fold', 0.3);
     tlog(t, `${p.name} folds`);
   } else if(action.type==='check'){
     if(toCall>0) return applyAction(t,playerId,{type:'call'});
     p.acted = true;
+    maybeSay(t, p, 'check', 0.22);
     tlog(t, `${p.name} checks`);
   } else if(action.type==='call'){
     const amt = Math.min(toCall, p.stack);
@@ -1650,6 +2464,7 @@ function applyAction(t, playerId, action){
     if(p.stack===0) p.allIn = true;
     p.acted = true;
     sfxChip();
+    maybeSay(t, p, 'call', 0.4);
     tlog(t, amt<toCall ? `${p.name} calls $${amt} (all-in)` : `${p.name} calls $${amt}`);
   } else if(action.type==='bet' || action.type==='raise'){
     if(t.cfg.bettingStructure==='limit' && (t.betsThisStreet||0) >= 4){
@@ -1678,6 +2493,7 @@ function applyAction(t, playerId, action){
     p.acted = true;
     t.lastAggressorId = p.id;
     sfxChip();
+    maybeSay(t, p, 'bet', 0.6);
     tlog(t, `${p.name} ${action.type==='bet'?'bets':'raises to'} $${p.currentBet}${p.allIn?' (all-in)':''}`);
   }
 }
@@ -1751,7 +2567,6 @@ function goToShowdown(t){
     if(w.id===0){
       t.stats.humanHandsWon++;
       t.stats.biggestPotWon = Math.max(t.stats.biggestPotWon, t.pot);
-      sfxWin();
     }
     t.pot = 0;
     finalizeHandVisuals(t, stacksBefore);
@@ -1798,7 +2613,7 @@ function goToShowdown(t){
       if(speaker) tlog(t, `${speaker.name}: "${TABLE_CHATTER[Math.floor(Math.random()*TABLE_CHATTER.length)]}"`);
     }
   });
-  if(humanWonThisHand){ t.stats.humanHandsWon++; t.stats.humanShowdownsWon++; sfxWin(); }
+  if(humanWonThisHand){ t.stats.humanHandsWon++; t.stats.humanShowdownsWon++; }
   t.pot = 0;
   finalizeHandVisuals(t, stacksBefore);
   finishHand(t);
@@ -1831,8 +2646,41 @@ function finalizeHandVisuals(t, stacksBefore){
     type: delta>0 ? 'win' : (delta<0 ? 'lose' : 'push'),
     amount: Math.abs(delta),
     handName: human.handEval ? human.handEval.name : null,
-    opponentBestName
+    opponentBestName,
+    id: 'r' + (++resultBannerSeq)
   };
+  if(delta>0) sfxFanfare();
+  else if(delta<0) sfxSting();
+  reactToShowdown(t, stacksBefore, delta > 0);
+}
+
+/* Who says what once the money moves: winners crow, losers either sag or take a swing at
+   whoever took it — and the size of the swing scales with how much of their stack went. */
+function reactToShowdown(t, stacksBefore, humanWon){
+  if(typeof window === 'undefined' || !window.setTimeout) return;
+  const bb = t.cfg.bigBlind || 2;
+  const reactions = [];
+  t.players.forEach(p=>{
+    if(p.isHuman || p.sitOut) return;
+    const before = stacksBefore[p.id];
+    if(before === undefined) return;
+    const d = p.stack - before;
+    if(d === 0) return;
+    const big = Math.abs(d) >= bb * 14;
+    if(d > 0){
+      if(Math.random() < (big ? 0.9 : 0.45)) reactions.push([p.id, big ? 'winBig' : 'winSmall']);
+    } else {
+      const key = humanWon ? (big ? 'jabBig' : 'jabSmall') : (big ? 'dejectedBig' : 'dejectedSmall');
+      if(Math.random() < (big ? 0.8 : 0.35)) reactions.push([p.id, key]);
+    }
+  });
+  reactions.slice(0,3).forEach(([id,key],i)=>{
+    setTimeout(()=>{
+      if(state.table !== t) return;
+      sayAt(t, id, voiceLine(t.players.find(x=>x.id===id).name, key), 3400);
+      render();
+    }, 420 + i*900);
+  });
 }
 
 /* ---------------- Stack count-up animation (no-op safely outside a browser) ---------------- */
@@ -1899,7 +2747,8 @@ function finishHand(t){
       }
     }
   } else {
-    t.players.forEach(p=>{ if(p.stack<=0) p.sitOut = true; });
+    // cash game: only the human is truly out of chips; AI seats refill at the next hand
+    t.players.forEach(p=>{ if(p.stack<=0 && p.isHuman) p.sitOut = true; });
   }
   render();
 }
@@ -2602,22 +3451,54 @@ function renderDecisionClock(t){
     </div>`;
 }
 
+let resultBannerSeq = 0;
+let countedBannerId = null;
 function renderResultBanner(t){
   if(t.stage!=='showdown' || !t.lastHandResult) return '';
   const r = t.lastHandResult;
+  const amt = `<span class="result-amt" data-count-to="${r.amount}" data-count-id="${r.id}">${r.type==='push' ? '$0' : (r.type==='win'?'+':'\u2212') + '$' + r.amount}</span>`;
   if(r.type==='win'){
     return `<div class="result-banner win">
-      <div class="result-title">YOU WIN $${r.amount}</div>
+      <div class="result-title">YOU WIN</div>
       <div class="result-sub">${r.handName ? `with ${r.handName}` : 'everyone else folded'}</div>
+      ${amt}
     </div>`;
   }
   if(r.type==='lose'){
     return `<div class="result-banner lose">
-      <div class="result-title">YOU LOSE $${r.amount}</div>
+      <div class="result-title">YOU LOSE</div>
       ${r.opponentBestName ? `<div class="result-sub">beaten by ${r.opponentBestName}</div>` : ''}
+      ${amt}
     </div>`;
   }
-  return `<div class="result-banner push"><div class="result-title">PUSH</div></div>`;
+  return `<div class="result-banner push"><div class="result-title">SPLIT POT</div>${amt}</div>`;
+}
+/* the money is the feedback that matters, so it counts up rather than just appearing.
+   Keyed on the result id so re-renders during the stack animation don't restart it. */
+function animateResultAmount(){
+  const el = document.querySelector('.result-amt');
+  if(!el) { countedBannerId = null; return; }
+  const id = el.dataset.countId;
+  const total = parseInt(el.dataset.countTo, 10) || 0;
+  const win = el.closest('.result-banner').classList.contains('win');
+  const sign = win ? '+' : '\u2212';
+  if(id === countedBannerId || total === 0){
+    el.textContent = (total===0 ? '' : sign) + '$' + total;
+    return;
+  }
+  countedBannerId = id;
+  const start = (typeof performance!=='undefined' ? performance.now() : Date.now());
+  const dur = 750;
+  const step = ()=>{
+    const live = document.querySelector('.result-amt');
+    if(!live || live.dataset.countId !== id) return;
+    const now = (typeof performance!=='undefined' ? performance.now() : Date.now());
+    const frac = Math.min(1, (now - start) / dur);
+    const eased = 1 - Math.pow(1 - frac, 3);
+    live.textContent = sign + '$' + Math.round(total * eased);
+    if(frac < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
 }
 
 function renderCashGameOver(t){
@@ -2774,7 +3655,7 @@ function renderPlay(){
   }
 
   if(!t.cfg.isTournament){
-    cfgHTML = `<div class="card-box" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+    cfgHTML = `<div class="card-box table-settings" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
       <div class="muted">Cash game &middot; ${t.cfg.seatCount}-max &middot; Blinds $${t.cfg.smallBlind}/$${t.cfg.bigBlind} &middot; Difficulty: ${t.cfg.difficulty==='hard'?'Hard':'Standard'} &middot; ${t.cfg.bettingStructure==='potlimit'?'Pot-Limit':t.cfg.bettingStructure==='limit'?'Limit':t.cfg.bettingStructure==='shortdeck'?'Short-Deck (6+)':'No-Limit'}</div>
       <button class="btn" id="btnStartTable">Restart Table</button>
     </div>`;
@@ -2803,7 +3684,7 @@ function renderPlay(){
       tablesRemaining = 1; notice = null;
     }
     tourneyStatusHTML = `
-      <div class="card-box">
+      <div class="card-box table-settings">
         <h2>Tournament — Level ${level+1}</h2>
         <div class="pill">Blinds $${t.cfg.smallBlind}/$${t.cfg.bigBlind}</div>
         <div class="pill">Next level in ${handsLeft} hand${handsLeft===1?'':'s'}${infoIcon('Blinds rise on a fixed schedule regardless of stack sizes \u2014 this is what forces the action as a tournament goes on and stacks get relatively shallower.')}</div>
@@ -2811,7 +3692,7 @@ function renderPlay(){
         ${isMtt && tablesRemaining>1 ? `<div class="pill">${tablesRemaining} tables in play${infoIcon('Your table plays out normally while another all-AI table runs in the background at the same pace. Players get moved between tables to keep them balanced as the field shrinks.')}</div>` : ''}
         ${human.sitOut ? `<div class="pill" style="background:var(--bad); color:#fff; border-color:#a13d2c;">You're out \u2014 spectating the rest of the field</div>` : `<div class="pill">Your stack: $${human.stack}</div>`}
         ${notice ? `<div class="pill" style="background:var(--gold); color:#20200c; border-color:var(--gold-bright);">${notice}</div>` : ''}
-        <div class="btn-row"><button class="btn danger" id="btnAbandonTournament">Abandon Tournament</button></div>
+        <div class="btn-row">${human.sitOut ? `<button class="btn primary" id="btnNewTournamentEarly">${state.playMode==='career'?'Back to Career':'Start New Tournament'}</button>` : ''}<button class="btn danger" id="btnAbandonTournament">${human.sitOut?'Stop Spectating':'Abandon Tournament'}</button></div>
       </div>`;
   }
 
@@ -2820,13 +3701,14 @@ function renderPlay(){
     const pos = seatPosition(i, list.length);
     const isDealer = i===t.dealerIdx;
     const showCards = p.isHuman || t.stage==='showdown';
-    const cardsHTML = p.folded ? '' : `<div class="cards">${
-      p.holeCards.map(c=> showCards ? cardHTML(c,{size:'sm'}) : cardHTML(null,{size:'sm'})).join('')
+    const cardsHTML = p.folded ? '' : `<div class="cards${showCards?' zoom-group':''}">${
+      p.holeCards.map((c,ci)=> showCards ? cardHTML(c,{size:'sm', fresh:freshHole(t,p,ci)}) : cardHTML(null,{size:'sm', fresh:freshHole(t,p,ci)})).join('') + (showCards ? zoomGroupHTML(p.holeCards, {down: parseFloat(pos.top) < 34}) : '')
     }</div>`;
     return `<div class="seat${p.id===t.actingIdx?' active-turn':''}${p.folded?' folded':''}" style="left:${pos.left}; top:${pos.top};">
       ${isDealer?'<div class="dealer-btn" title="Dealer button — this seat acts last after the flop this hand, the biggest positional advantage at the table">D</div>':''}
       <div class="name">${p.name}${p.isHuman?' (you)':''}</div>
       <div class="stack">$${displayStackFor(t,p)}</div>
+      ${p.speech && p.speech.until > Date.now() ? `<div class="seat-bubble">${p.speech.text}</div>` : ''}
       ${p.currentBet>0?`<div class="bet-tag">${chipStackHTML(p.currentBet)}$${p.currentBet}</div>`:''}
       ${cardsHTML}
       ${t.stage==='showdown' && !p.folded && p.handEval ? `<div class="bet-tag">${p.handEval.name}</div>` : ''}
@@ -2878,20 +3760,28 @@ function renderPlay(){
 
   return cfgHTML + tourneyStatusHTML + `
     <div class="card-box">
-      <div class="table-wrap">
+      <div class="table-fit"${tableFitStyleAttr()}><div class="table-wrap"${tableWrapStyleAttr()}>
         <div class="felt"></div>
+        <div class="felt-mark" aria-hidden="true">
+          <span class="fm-name">Hold&rsquo;em Trainer</span>
+          <span class="fm-rule"></span>
+          <span class="fm-sub">Probability &amp; Bluffing</span>
+        </div>
         <div class="board-area">
-          <div class="pot-line">${chipStackHTML(t.pot)}Pot: $${t.pot}${t.stage!=='idle'?` &middot; ${t.stage.toUpperCase()}`:''}${infoIcon('The pot is everyone\u2019s bets combined this hand \u2014 whoever has the best hand at showdown (or whoever\u2019s left if everyone else folds) wins it.')}</div>
-          <div class="card-row" style="justify-content:center;">
-            ${t.board.map(c=>cardHTML(c)).join('') || '<span class="muted">Community cards appear here</span>'}
+          ${potPileHTML(t)}
+          <div class="pot-line">Pot: $${t.pot}${t.stage!=='idle'?` &middot; ${t.stage.toUpperCase()}`:''}${infoIcon('The pot is everyone\u2019s bets combined this hand \u2014 whoever has the best hand at showdown (or whoever\u2019s left if everyone else folds) wins it.')}</div>
+          <div class="card-row${t.board.length?' zoom-group':''}" style="justify-content:center;">
+            ${t.board.map((c,ci)=>cardHTML(c,{fresh:freshBoard(t,ci)})).join('') || '<span class="muted">Community cards appear here</span>'}
+            ${zoomGroupHTML(t.board)}
           </div>
         </div>
         ${seatsHTML}
-      </div>
-      ${renderResultBanner(t)}
+        ${renderResultBanner(t)}
+      </div></div>
       ${humanTurn && t.cfg.isTournament ? renderDecisionClock(t) : ''}
       <div class="action-bar">${actionHTML}</div>
       ${humanTurn ? `<div class="muted" style="text-align:center; font-size:0.72rem; margin-top:4px;">Keys: <b>Z</b> fold &middot; <b>X</b> check/call &middot; <b>C</b> half-pot &middot; <b>V</b> pot &middot; <b>B</b> all-in</div>` : ''}
+      <div class="log-peek">Hand history</div>
       <div class="log-box">${t.log.map(l=>`<div>${l}</div>`).join('')}</div>
     </div>`;
 }
@@ -3020,6 +3910,13 @@ function wirePlayEvents(){
   }
   const btnNewTournament = document.getElementById('btnNewTournament');
   if(btnNewTournament) btnNewTournament.addEventListener('click', ()=>{
+    state.table = null;
+    state.mtt = null;
+    render();
+  });
+  // busting out shouldn't trap you in spectator mode — same action as the completion screen's
+  const btnNewEarly = document.getElementById('btnNewTournamentEarly');
+  if(btnNewEarly) btnNewEarly.addEventListener('click', ()=>{
     state.table = null;
     state.mtt = null;
     render();
@@ -5316,13 +6213,38 @@ function renderManual(){
         <p class="muted">Four tiers: Local League (6-Max) &rarr; Regional Circuit (Full Ring) &rarr; National Championship (Full Ring, Hard AI) &rarr; The Majors (Full Ring Multi-Table, Hard AI). Every event is a completely normal tournament — the tier just auto-selects the format, table size, difficulty, and buy-in; nothing about how a tournament plays is different from entering one manually. Placements earn ranking points (100 for 1st, scaling down to 5 for a min finish); reach a tier's point threshold and you're promoted. Winning an event at the top tier makes you a champion. This is entirely separate from the Tournament tab, which stays available the whole time as a practice toggle — jump into any format directly regardless of career progress.</p>
       </details>
       <details class="man-sec">
-        <summary>Known Limitations (v0.39.0)</summary>
+        <summary>Saving &mdash; what "Continue Progress" actually restores</summary>
+        <p class="muted"><b>What carries over:</b> your drill scores and streaks across every drill, your career tier and bankroll, any outstanding marker, your achievements, and your cosmetic and audio settings. It saves automatically to this browser's own storage as you play &mdash; there's no save button, it works offline, and it is <i>not</i> synced between devices.</p>
+        <p class="muted"><b>Resuming a table:</b> if you close the tab or step away mid-hand, the start screen offers <b>Resume Table</b> alongside Continue Progress, and tells you what's waiting &mdash; "tournament, level 4, hand #38 (turn)". It picks the hand up exactly where you left it: the remaining deck in its exact order, the board, every stack and side-pot contribution, who's folded, who's all-in, the dealer button, the blind level and each AI's read on you. The one thing it doesn't restore is whichever AI was mid-think when you left &mdash; its timer died with the page, so that player simply takes its turn again.</p>
+        <p class="muted">This works by persisting the whole table rather than trying to reconstruct it, which is the only honest way to do it: reconstruction is what would quietly corrupt the odds you're being trained on. <b>New Game</b> discards it, so a fresh start is always genuinely fresh.</p>
+      </details>
+      <details class="man-sec">
+        <summary>The Table &mdash; reading it, and getting out of its way</summary>
+        <p class="muted"><b>The chrome hides itself.</b> Five seconds after you sit down at the table, the tab row, the table-settings strip, the tournament status bar and the hand history all roll away, and the card fan in the header pulses three times to tell you where they went. Hover the fan (or the header) and everything comes back for as long as you're near it; the hand history has its own <b>HAND HISTORY</b> label you can hover to unroll just that. Every keyboard shortcut keeps working the whole time it's hidden. If you'd rather it stayed put, <b>Pin</b> in the header switches the whole behaviour off and remembers that choice.</p>
+        <p class="muted"><b>Hovering shows the whole group.</b> Hover your own two cards and you get both of them full size; hover any community card and you get the entire board. It's the group you're reading, not a single card, so that's what the preview shows.</p>
+        <p class="muted"><b>The pot is a real pile.</b> One chip per betting unit, in leaning stacks that grow as money goes in and only animate the chips that were just added &mdash; so you can see the pot getting heavier rather than reading a number change. Above about 54 units it stops adding chips and the printed total carries it, to keep a monster pot on the table.</p>
+        <p class="muted"><b>The table scales to your window.</b> It's a fixed-size stage scaled to whatever room is left after the header and controls, so the whole Play tab fits one screen. Two rules break the tie when space is tight: text has a legibility floor it won't shrink past, but clipping the fold/call/raise row is worse than small text &mdash; so if holding that floor would push the controls off-screen, the table gives back exactly the overflow instead. The action row is also pinned to the bottom of the viewport, so it can never scroll away mid-decision.</p>
+      </details>
+      <details class="man-sec">
+        <summary>Table Talk &mdash; who's saying that</summary>
+        <p class="muted">Every regular has their own voice, with separate lines for putting money in, taking a pot, and losing one: <b>Riko</b> (online kid, all upside), <b>Dale</b> (good-natured hauler), <b>Priya</b> (quant, never raises her voice), <b>Owen</b> (expects the worst, usually right), <b>Marta</b> (ice, minimal words), <b>Sam</b> (thrilled tourist), <b>Levi</b> (old-timer, talks in aphorisms), <b>Nadia</b> (needling, enjoying herself), and <b>Bonnie Valentine</b> herself (velvet, faintly threatening).</p>
+        <p class="muted">Losses split two ways. If another player took the pot, you get a dejected line; if <i>you</i> took it, you get a backhanded one aimed at you &mdash; and both scale with how much of their stack went with the hand, so a big pot gets a genuinely sore reaction and a small one gets a shrug. It's flavour only: nothing anyone says carries information about their cards, and none of it affects the odds, the AI's decisions, or how anything is graded.</p>
+      </details>
+      <details class="man-sec">
+        <summary>Why this looks like the Blackjack trainer</summary>
+        <p class="muted">The two trainers are built to read as one product: the same palette and panel tokens, the same Fraunces/Playfair/JetBrains Mono type pairing, the same wooden-rail-and-felt table, the same start screen and hanging brandmark, the same auto-hiding chrome, the same verdict card on the felt, and &mdash; ported envelope for envelope &mdash; literally the same synthesized sound set and lounge-jazz house band.</p>
+        <p class="muted">Two things are deliberately <i>not</i> shared, because the games don't support them. Blackjack has no <b>chip pile</b>: it's one bet per box against the dealer, so there's no shared pot to heap up. And Blackjack has no <b>table talk</b>: the other boxes aren't your opponents, so there's nobody with a reason to gloat at you. Adding either would be consistency for its own sake.</p>
+      </details>
+      <details class="man-sec">
+        <summary>Known Limitations (v0.51.0)</summary>
         <ul class="muted" style="line-height:1.7;">
           <li>Sponsorships aren't built yet — the Marker Called screen has an architectural slot reserved for "burn a sponsorship" once that system exists.</li>
           <li>Career Mode's entry cost and marker size scale only by tier, not by betting structure.</li>
           <li>Preflop Position's Short-Deck chart covers opening ranges only — Facing A Raise isn't available for Short-Deck yet. Range Reading isn't deck-aware at all.</li>
           <li>Limit Hold'em's raise cap (4 bets/street) is a fixed constant. Hard-mode AI's Big Blind defense uses a fixed defend-width per format.</li>
           <li>Table Image &amp; Exploits reads VPIP/PFR/Aggression Factor only. The Full Skills Test and volume achievement counter don't include Flash Cards or the EV Calculator yet. The decision clock doesn't force a fold on expiry, deliberately.</li>
+          <li>Table talk is a fixed line pool per player, picked at random within a category. It doesn't reference the actual hand, the board, or anything you did earlier in the session &mdash; a "backhanded" line is chosen because you won a big pot off them, not because it read the hand.</li>
+          <li>The chrome auto-hide is hover-driven, so it's desktop-only by design: on phones (and any window under 480px) it stays off, since there's no hover to bring the controls back.</li>
           <li>The EV &amp; Risk Calculator's variance model and its stated assumptions are described in the tool itself and in v0.38.0's entry below.</li>
           <li><b>Mobile responsiveness has real, targeted fixes now, but isn't a full match for Blackjack's much more mature responsive system</b> (6 media queries here versus Blackjack's 28, built over many incremental versions). The seat-layout collapse, touch-target sizing, and key-badge hiding were verified structurally (correct CSS present, correct specificity, correct selectors) and the full functional regression confirms no game logic broke — but none of it has been visually verified on a real device or browser, since that capability isn't available in this environment. Treat this as a real, tested-where-testable improvement, not a guarantee of how it actually looks on your phone.</li>
         </ul>
@@ -5330,11 +6252,32 @@ function renderManual(){
       <details class="man-sec">
         <summary>🗺️ Roadmap</summary>
         <p class="muted">Every item from the original Blackjack feature-parity audit is built, plus the Valentine Invitational, and the full smallest-to-largest sticking-points list is complete: (a) achievement volume/streak categories, (b) isolated single-decision drills, (c) a Flash Cards speed round, (d) an EV &amp; Risk Calculator, and (e) mobile responsiveness fixes — all <b>done</b>. Open threads worth another pass, in no particular priority: sponsorships, Short-Deck coverage for Facing A Raise and Range Reading, broadening what feeds the Full Skills Test and volume achievements, and genuine visual QA of the mobile work on a real device, which this environment can't do.</p>
+        <p class="muted"><b>Visual and audio parity with the Blackjack trainer is closed</b> as of v0.47.0 &mdash; shared palette, type, table treatment, start screen, brandmark, auto-hiding chrome, verdict card, sound set and house band, with the chip pile and table talk documented as deliberate Hold'em-only features rather than gaps. Anything further there is polish, not parity.</p>
       </details>
       <details class="man-sec">
         <summary>📜 Version History</summary>
         <div class="muted" style="line-height:1.7;">
-          <div><b>v0.39.0</b> — Tackled the last item: mobile responsiveness. Read Blackjack's actual 28 media queries directly rather than guessing at patterns, and ported the single most important one: below 480px width, the poker table's absolutely-positioned oval arc of seats — which doesn't have room to exist at phone width no matter how small the text gets — is abandoned entirely in favor of a plain vertical list, the exact same structural fix Blackjack's own table uses at the same width for the same reason. This was more than a copy-paste: Hold'em's seat positions are set by inline <code>style="left:...; top:..."</code> attributes from JS, and CSS specificity gives inline styles priority over any selector unless marked <code>!important</code> — so the override needed <code>!important</code> on position, left, top, and transform simultaneously, which a normal media-query rule wouldn't have achieved. Also disabled the seat-pulse animation on this layout rather than trying to make it behave: the animation's keyframes bake in a <code>translate(-50%,-50%)</code> centering transform that no longer applies once seats are static, and CSS animations can silently override an <code>!important</code> transform declared elsewhere for the same property — sidestepping that fight entirely by swapping to a plain static highlight was simpler and more reliable than trying to win it. Beyond the table: hid keyboard-shortcut badges and disabled hover-only tooltips under <code>(pointer:coarse)</code> since neither means anything without a keyboard or a mouse, bumped every button to a real 44px touch target (the standard floor on both iOS and Android — the desktop padding alone fell short), and added tablet and phone breakpoints scaling down text, cards, and spacing across the tabs most likely to feel cramped (Range Reading's grid, Career's tier table, the Skills Test). Tested everything that's actually testable without a real browser: confirmed the seat override rule genuinely carries <code>!important</code> on all four properties that need it, confirmed the touch button rule hits the real 44px floor, confirmed key-badges are hidden under the coarse-pointer query, confirmed the animation is disabled rather than left to conflict, confirmed the stylesheet itself has balanced braces, and reran the full 36,000-hand regression plus a 13-tab render sweep to confirm none of this — being CSS-only — touched any actual game logic. What I could not do, and want to be direct about rather than imply otherwise: none of this has been seen on an actual phone or in an actual browser. I can verify the right rules exist with the right specificity; I can't verify how it actually looks without the ability to render and screenshot a real page, which isn't available here. That's a real gap between "structurally correct" and "confirmed to look right," and it's the honest place to end this pass.</div>
+          <div><b>v0.51.0</b> — Wired the trainer into the series. The start screen's footer now links to the <b>front door</b> (`index.html`) and carries the same series rail the landing pages use, with the current game marked and the Blackjack trainer one click away. Because each game lives in its own repository, the cross-link is a sibling path &mdash; on GitHub Pages the two sites sit side by side under the same domain, so `../Blackjack.trainer/` resolves without hardcoding a full URL.</div>
+          <div style="margin-top:8px;"><b>v0.50.0</b> — <b>You can step away mid-hand now.</b> The whole table persists — the remaining deck in its exact order, the board, every stack and side-pot contribution, folded and all-in state, the dealer button, the blind level, each AI's read on you, and the full tournament or multi-table structure around it — so the start screen offers <b>Resume Table</b> and tells you exactly what's waiting ("tournament, level 4, hand #38 (turn)"). It resumes rather than reconstructs, which is the only version of this worth shipping: reconstruction is what would quietly corrupt the odds. The one thing not restored is whichever AI was mid-think when you left, since its timer died with the page — that player just takes its turn again. New Game discards the saved table, so a fresh start stays fresh.</div>
+          <div style="margin-top:8px;"><b>v0.49.0</b> — <b>Stopped the cards flashing.</b> Every action rebuilds the table's markup, and the deal animation was attached to every card unconditionally, so all of them replayed it on every AI decision. Cards now animate only the first time they actually appear &mdash; the render remembers what was already on screen and animates just the new ones. <b>And "Continue Saved Game" was overpromising.</b> It never restored a table or tournament in progress; it restores what you've learned and earned. It's now called <b>Continue Progress</b>, the start screen says in plain terms what does and doesn't carry over, and a new Manual section explains why a mid-hand resume isn't there: doing it wrong would quietly corrupt the odds you're being trained on, which is worse than dealing a fresh table.</div>
+          <div style="margin-top:8px;"><b>v0.48.3</b> — Made the unrolled menu actually clickable. Closing was driven by <code>mouseleave</code>, which is the wrong signal here: the row animates in underneath the moving cursor, and any moment the pointer spent in the gap between the logo and a tab started a countdown to collapse — so the thing you were aiming at kept rolling away. Opening is still hover; closing now depends on where the pointer actually is, and only happens once you've moved clearly below the whole header block with a 90px grace margin.</div>
+          <div style="margin-top:8px;"><b>v0.48.2</b> — The card preview no longer disappears behind the header. The table is a scaled element, which makes it its own stacking context, so the preview can't paint above the sticky header at any z-index — seats in the top third of the felt now drop their preview downward onto the table instead of upward off it.</div>
+          <div style="margin-top:8px;"><b>v0.48.1</b> — Fixed the table fit properly. Two real bugs behind the jumping. First, the chrome height was measured by subtracting the table's <i>already-scaled</i> height from its container, so the measurement ate its own tail: the smaller the table got, the larger "chrome" appeared, the available height walked toward zero, and the scale collapsed to its floor no matter how much room was genuinely free — which is also why rolling the chrome up never actually grew the table. The chrome is now measured with the table's slot collapsed to zero, so the freed space converts into scale as intended. Second, the scale was applied a frame after the DOM was replaced, so the table painted unscaled at full size for one frame on every render — a flash-and-snap on each AI action. The cached scale is now stamped into the markup itself, so the first painted frame is already correct.</div>
+          <div style="margin-top:8px;"><b>v0.48.0</b> — Two fixes. <b>The table stopped jumping around.</b> Its scale was re-derived from the measured chrome height on every single render, and that height changes constantly mid-hand as the action row rewraps and the hand log fills up — so the table resized in response to ordinary play. The log now has a fixed cap instead of a computed one (it can't feed back into the measurement), and a new scale has to differ by a real margin before it's applied; genuine layout changes — a window resize, the chrome rolling up or down — still force an exact re-fit. <b>And busting out of a tournament no longer traps you in spectator mode:</b> the status bar now offers "Start New Tournament" (or "Back to Career") the moment you're out, with the old Abandon button relabelled "Stop Spectating".</div>
+          <div style="margin-top:8px;"><b>v0.47.3</b> — <b>Fixed: winning every stack at a cash table ended the game.</b> Busted AI seats were being permanently sat out, so once you'd taken the last chip there were fewer than two players with money and Next Hand had nothing to deal. A cash table now refills itself the way a real cardroom does — the busted seat either has a new face sit down with a full buy-in (new name, new personality, logged in the hand history) or, if every regular is already seated, that player reloads. Tournaments are untouched: busting out is the entire point there.</div>
+          <div style="margin-top:8px;"><b>v0.47.2</b> — Eased the fan's overhang a second notch, to a light break over the tab row rather than a lean onto it.</div>
+          <div style="margin-top:8px;"><b>v0.47.1</b> — Eased the header fan's overhang. It was hanging far enough down to sit on top of the Play tab; it now clears the tab row while still reading as pinned onto the room rather than boxed inside the bar.</div>
+          <div style="margin-top:8px;"><b>v0.47.0</b> — Documentation pass, closing out the whole visual-alignment project. The Manual gained three sections that had gone undocumented while the work was in flight: <b>The Table</b> (how the chrome auto-hides and how to get it back, the whole-group card hover, how the pot pile works, and the two rules that decide how the table scales when space is tight), <b>Table Talk</b> (who all nine voices are, how loss lines split between dejected and backhanded, and an explicit note that none of it carries information about anyone's cards), and <b>Why this looks like the Blackjack trainer</b> &mdash; which also records the two deliberate divergences: Blackjack gets no chip pile, because one bet per box against the dealer never heaps up, and no table talk, because the other boxes aren't opponents and have no reason to gloat. Known Limitations picked up the two honest caveats on this round's features (table talk is a fixed line pool and doesn't read the hand; auto-hide is hover-driven and therefore desktop-only), and the Roadmap now marks Blackjack parity as closed rather than ongoing.</div>
+          <div style="margin-top:8px;"><b>v0.46.0</b> — Three consistency passes. The <b>tournament status bar</b> now rolls up with the tab row and the settings strip. The <b>win/loss verdict sits on the felt</b>, centred over the table like Blackjack's, instead of in a box below it. And the <b>sound set is Blackjack's</b>, ported envelope for envelope — the same attack/decay voice, the same chip click, the same card-deal burst, a shuffle before each deal, and win/lose cues built from the same arpeggio helper — so the two tables now sound like the same room.</div>
+          <div style="margin-top:8px;"><b>v0.45.0</b> — Hovering now shows the <b>whole</b> group full size, not one card: your hand together, or the entire board together — which is the thing you were trying to read. The header fan hangs down over the felt instead of up past the top of the window, so it can't get clipped. And the rolled-up hand history finally opens on hover: a zero-height box can't receive a mouse, so its "HAND HISTORY" label is the hover target now.</div>
+          <div style="margin-top:8px;"><b>v0.44.1</b> — Corrected the header mark: it's the <b>card fan</b> that hangs over the bar's edge, as in Blackjack, with the wordmark sitting inside the bar normally — not the wordmark on a hanging plate. The pulse that signals "hover me" now animates the cards themselves.</div>
+          <div style="margin-top:8px;"><b>v0.44.0</b> — <b>The table talks.</b> Every regular has their own voice — Riko the online kid, Dale the hauler, Priya the quant, Owen the pessimist, Marta the iceberg, Sam the tourist, Levi the old-timer, Nadia the needle, and Bonnie Valentine herself — with separate lines for putting money in, taking a pot, and losing one. Losses split two ways: dejected if another player took it, a backhanded jab at <i>you</i> if you did, and both scale with how much of their stack went with the hand. Bubbles sit over the seat's own cards and live on the player, so a re-render mid-hand doesn't wipe them. Also this pass: the landing hero now uses the play table's exact rail proportion and felt treatment; the felt's ghosted mark is the <b>Hold'em Trainer</b> wordmark rather than the card fan; the hover preview is a real card again (rank in both corners, big pip through the middle) instead of a mostly-blank rectangle; the hand history rolls up with the rest of the chrome and unrolls when you reach for it; and the table finally re-scales <i>after</i> the rows finish animating away, instead of measuring the old height mid-collapse.</div>
+          <div style="margin-top:8px;"><b>v0.43.1</b> — Two fixes to the window fit. The action bar is now sticky to the bottom of the viewport, so the fold/call/raise row can never be scrolled or clipped off no matter how short the window is. And the table's legibility floor (0.62) no longer wins outright: if holding it would push the controls past the bottom of the screen, the table gives back exactly the overflow instead — small text beats a sliced-through button.</div>
+          <div style="margin-top:8px;"><b>v0.43.0</b> — The table now clears itself. Instead of a button you have to remember, the tab row <b>and</b> the table-settings strip fold away five seconds after you sit down, and the brandmark pulses three times to tell you where they went — hover the logo and everything comes back. "Pin" in the header opts out. The header sign now hangs proud of the bar and over the felt like Blackjack's, and the wordmark carries it alone: the little card fan didn't survive being that small, so it lives on the landing screen where it's big enough to read.</div>
+          <div style="margin-top:8px;"><b>v0.42.0</b> — Second pass on the family resemblance, all six from the same review. <b>Music was doubling</b>: every theme change reset the bar counter, which restarted the trio on top of notes already scheduled — the scheduler now runs under a single token (any older loop invalidates itself) and a new tune picks up at the next bar instead of from the top. <b>The pot is now a pile</b>, not columns: leaning stacks on a shallow ellipse with per-chip jitter that's deterministic, so a chip keeps its exact spot as the pile grows around it. <b>The landing hero is the same oval as the play table.</b> <b>The tab bar can fold away</b> ("Tabs ⌃" in the header) so the table gets the room back; hovering the brandmark brings it back for as long as you're near it, and every tab hotkey still works while it's hidden. <b>The whole Play tab now fits the window</b> — the table measures the space left after the header, setup strip, action bar and log rather than assuming a fixed height. <b>Hovering your hole cards or the board</b> pops a full-size copy above the table, the same preview Blackjack uses for deck backs. And the <b>house mark is printed into the felt</b> as outlines, to break up the flat cloth.</div>
+          <div style="margin-top:8px;"><b>v0.41.0</b> — Ported Blackjack's landing page, house band and win/loss theatre. A start screen with the card-fan brandmark and the same mission-statement voice; the lounge-jazz trio (walking bass, brushed hi-hat, comping chords) replacing the old pad loop, with a tune per situation; Options' felt and deck dropdowns replaced by visual swatches that paint their own theme with a hover preview; the pot rendered as real chips that grow as money goes in; and an animated verdict card whose total counts up, with a fanfare when the pot comes your way and a sting when it doesn't.</div>
+          <div style="margin-top:8px;"><b>v0.40.0</b> — Aligned the trainer's visual identity with the Blackjack trainer so the two read as one product: shared palette and panel tokens, Fraunces headings, the wooden-rail-and-felt table treatment, pill tabs with a solid gold active state, the double rule printed inside every card, and Blackjack's solid verdict card in place of the old tinted result banner.</div>
+          <div style="margin-top:8px;"><b>v0.39.0</b> — Tackled the last item: mobile responsiveness. Read Blackjack's actual 28 media queries directly rather than guessing at patterns, and ported the single most important one: below 480px width, the poker table's absolutely-positioned oval arc of seats — which doesn't have room to exist at phone width no matter how small the text gets — is abandoned entirely in favor of a plain vertical list, the exact same structural fix Blackjack's own table uses at the same width for the same reason. This was more than a copy-paste: Hold'em's seat positions are set by inline <code>style="left:...; top:..."</code> attributes from JS, and CSS specificity gives inline styles priority over any selector unless marked <code>!important</code> — so the override needed <code>!important</code> on position, left, top, and transform simultaneously, which a normal media-query rule wouldn't have achieved. Also disabled the seat-pulse animation on this layout rather than trying to make it behave: the animation's keyframes bake in a <code>translate(-50%,-50%)</code> centering transform that no longer applies once seats are static, and CSS animations can silently override an <code>!important</code> transform declared elsewhere for the same property — sidestepping that fight entirely by swapping to a plain static highlight was simpler and more reliable than trying to win it. Beyond the table: hid keyboard-shortcut badges and disabled hover-only tooltips under <code>(pointer:coarse)</code> since neither means anything without a keyboard or a mouse, bumped every button to a real 44px touch target (the standard floor on both iOS and Android — the desktop padding alone fell short), and added tablet and phone breakpoints scaling down text, cards, and spacing across the tabs most likely to feel cramped (Range Reading's grid, Career's tier table, the Skills Test). Tested everything that's actually testable without a real browser: confirmed the seat override rule genuinely carries <code>!important</code> on all four properties that need it, confirmed the touch button rule hits the real 44px floor, confirmed key-badges are hidden under the coarse-pointer query, confirmed the animation is disabled rather than left to conflict, confirmed the stylesheet itself has balanced braces, and reran the full 36,000-hand regression plus a 13-tab render sweep to confirm none of this — being CSS-only — touched any actual game logic. What I could not do, and want to be direct about rather than imply otherwise: none of this has been seen on an actual phone or in an actual browser. I can verify the right rules exist with the right specificity; I can't verify how it actually looks without the ability to render and screenshot a real page, which isn't available here. That's a real gap between "structurally correct" and "confirmed to look right," and it's the honest place to end this pass.</div>
           <div style="margin-top:8px;"><b>v0.38.0</b> — Added the EV &amp; Risk Calculator, the single biggest remaining feature gap versus Blackjack's own EV tab: a new 13th tab computing Risk of Ruin, N₀, and a session variance range against the real career bankroll economy. The interesting design problem here was where the variance number should even come from — real published tournament-variance figures exist, but every one I found is calibrated to 500-2000+ player professional-circuit fields, nothing like this trainer's own 6/9/72/90-player tiers, so importing one of those numbers directly would have been quietly dishonest despite looking authoritative. Instead, variance is derived analytically from the trainer's own real, already-tested payout structure: a skill-tilt parameter is calibrated by binary search so the mean profit exactly matches whatever ROI% the player states, and that same calibrated distribution is then used to compute variance — internally consistent by construction rather than two mismatched numbers bolted together. From there, Risk of Ruin and N₀ use the identical diffusion-approximation formulas already proven out in Blackjack's own EV tab, just applied to per-tournament units instead of per-hand. A "Use My Current Career Numbers" button pulls your real bankroll, current tier's buy-in, and actual field size (the real one, if you're mid-tournament, not a guess) directly from live career state. Caught a real bug before it ever reached testing: an early version referenced a constant that's declared later in the file, which throws in JavaScript since <code>const</code> isn't hoisted the way <code>function</code> is — caught immediately by the syntax/reference check that runs before any test is allowed to proceed. Tested extensively given how much new math this introduces: confirmed the skill-tilt calibration hits the exact stated ROI (within 5 cents) across 25 combinations of field size and target ROI, confirmed variance is never negative and correctly increases with field size at a fixed ROI (a real, well-known property of tournament variance), confirmed Risk of Ruin's edge cases (zero bankroll means certain ruin, a losing player means certain ruin regardless of bankroll, zero variance with a positive edge means zero risk, and more bankroll always lowers risk at fixed mean/variance), confirmed N₀ correctly requires more events for a weaker edge, confirmed the career-numbers button pulls genuinely live data including the real active tournament's field size when one is in progress, and a full persistence round-trip for every input. The calculator's own disclosed assumptions (a smooth parametric model, no stake adjustment in the Risk of Ruin math) are stated directly in the tool itself, not just in this changelog. Full 24,000-hand regression and a 13-tab render sweep came back clean.</div>
           <div style="margin-top:8px;"><b>v0.37.0</b> — Added a genuine Flash Cards speed round to Preflop Position, matching what Blackjack's Flash Cards mode actually is: rapid strategy recognition against the clock, not a single isolated concept (that's Rule of 2 and 4's and the isolated drills' job). Reuses the exact same, already-tested opening-range logic as the main Preflop Position drill — the only thing different is the format: a real 60-second timer, no explanation shown between questions, and no "next" button at all — answering immediately generates the next hand, maximizing throughput the way an actual speed round has to. Tracks a persisted best-correct-count across rounds. The timer uses the same safe pattern already proven for the tournament decision clock: a guarded <code>setInterval</code> that's a hard no-op with no real browser present, with the actual remaining-time math computed independently of whether the interval ever fires — which is what makes it testable at all in this environment. Caught and fixed a real mistake of my own before it ever reached testing: an early edit left <code>renderFlashcardsSection()</code> missing its closing brace, which would have been a hard syntax error breaking the entire file — caught immediately by the syntax checker that runs before any test is allowed to proceed, not discovered later by chance. Tested: timer math verified correct at round start, mid-round, and past expiry (clamped at zero, never negative), confirmed answering truly advances immediately with no separate step, confirmed the best score updates only on genuine improvement and never regresses on a worse round, confirmed the no-browser ticker guard, confirmed the late-answer guard correctly detects expired time, and a full persistence round-trip. Also documented honestly rather than silently patched: Flash Cards doesn't yet feed the volume-achievement counter or the Full Skills Test, since it tracks a per-round best rather than a persistent cumulative total the way every other drill does — a real, named scope boundary rather than an oversight. Full 24,000-hand regression and a 12-tab render sweep came back clean.</div>
           <div style="margin-top:8px;"><b>v0.36.0</b> — Set out to build three isolated single-decision drills (Blackjack's Insurance-drill pattern) and discovered two of the three already existed, complete and correctly wired: <b>3-Bet or Fold</b> (a stricter binary collapse of Facing A Raise, living in Preflop Position) and <b>Push or Fold</b> (a real, named 6-20bb short-stack tournament concept, using genuine cards and live Monte Carlo equity rather than an abstract stated number — better than what I'd been about to build from scratch). Verified both properly rather than assuming "already there" meant "correct": generation logic checked against their underlying threshold functions across 300 samples each, full persistence round-trips, and confirmed Push or Fold's click handler — a locally-scoped function I initially couldn't find with a naive search and briefly suspected was a real missing-function bug, until closer inspection showed it was correctly defined and already using the shared streak tracker. Built the one genuinely missing piece: <b>Bluff Breakeven %</b> in Bet Sizing &amp; Bluffing — given a pot and a bare bluff-raise size, what fold percentage alone justifies it with zero backup equity. Deliberately a different framing from the existing Combo Balance drill (a pure percentage threshold instead of a combo-count), the other classic way this same idea gets taught. While wiring this in, found and fixed a real, quietly-wrong piece of my own previous version's work: <code>totalDrillAttempts()</code>, which the volume achievements depend on, had never counted Push or Fold or 3-Bet or Fold at all, since I didn't know either drill existed when I wrote that function last version — meaning every player's progress toward the volume achievements had been silently undercounted from two entire drills' worth of activity. Fixed to cover all 14 drill-total fields now in the trainer, verified with a direct count test (caught my own arithmetic mistake mid-test — miscounted 14 fields as 13 on the first pass, re-verified properly rather than shipping a false "it's wrong" or false "it's right" without checking the actual number). Full 36,000-hand regression and a 12-tab render sweep came back clean.</div>
@@ -5385,6 +6328,10 @@ function renderManual(){
 /* =========================================================
    OPTIONS — audio settings
    ========================================================= */
+/* paints a deck-back preview in its own theme, independent of the table's current one */
+function deckSwatchStyle(d){
+  return `background:radial-gradient(circle at 50% 50%, rgba(232,193,79,0.22) 0%, transparent 60%), repeating-linear-gradient(45deg, ${d.stripeA} 0 5px, ${d.stripeB} 5px 10px); box-shadow:inset 0 0 0 2px ${d.border};`;
+}
 function renderOptions(){
   const a = state.audio;
   const m = a.music;
@@ -5401,7 +6348,7 @@ function renderOptions(){
       </label>
 
       <h3 style="margin-top:20px; color:var(--gold-bright);">Background Music</h3>
-      <div class="muted">Procedurally generated chord loops, same zero-file approach as the sound effects. Four themes: "Lounge" for normal play, "High Stakes" when short-stacked or at a final table, "Career" on your Career home screen, and "Triumphant" when you win a tournament.</div>
+      <div class="muted">A soft, looping lounge-jazz trio &mdash; walking bass, brushed hi-hat, comping chords &mdash; playing quietly under the table. Synthesized live like everything else, so it loops forever with no file to download. The room changes tune with the situation: <b>The Green Room</b> for normal play, <b>The Blue Room</b> when you're short-stacked or at a final table, <b>The Velvet Lounge</b> on your Career screen, and <b>The Gold Room</b> when you take a tournament down.</div>
       <div class="btn-row" style="margin-top:10px;">
         <button class="btn${m.enabled?' primary':''}" id="toggleMusic">${m.enabled?'Music: On':'Music: Off'}</button>
       </div>
@@ -5412,18 +6359,22 @@ function renderOptions(){
 
       <h3 style="margin-top:20px; color:var(--gold-bright);">Table Appearance</h3>
       <div class="muted">Purely cosmetic — changes felt color and card-back design, nothing about how the game plays.</div>
-      <div style="display:flex; gap:16px; flex-wrap:wrap; margin-top:10px;">
-        <label class="field">Felt Color
-          <select id="cfgFeltTheme">
-            ${FELT_THEMES.map(f=>`<option value="${f.id}" ${FELT_THEME===f.id?'selected':''}>${f.name}</option>`).join('')}
-          </select>
-        </label>
-        <label class="field">Card Back
-          <select id="cfgDeckTheme">
-            ${DECK_THEMES.map(d=>`<option value="${d.id}" ${DECK_THEME===d.id?'selected':''}>${d.name}</option>`).join('')}
-          </select>
-        </label>
+      <div style="font-size:0.78rem; color:var(--cream-dim); margin:12px 0 4px;">Card back</div>
+      <div class="swatch-grid">
+        ${DECK_THEMES.map(d=>`<button class="swatch${DECK_THEME===d.id?' on':''}" data-deck-id="${d.id}" title="${d.name}">
+          <span class="face" style="${deckSwatchStyle(d)}"></span>
+          <span class="tip"><span class="big" style="${deckSwatchStyle(d)}"></span><span class="nm">${d.name}</span></span>
+        </button>`).join('')}
       </div>
+      <div class="swatch-note">Hover a back to see it full size. Face-down hole cards and the muck use it.</div>
+      <div style="font-size:0.78rem; color:var(--cream-dim); margin:0 0 4px;">Felt colour</div>
+      <div class="swatch-grid">
+        ${FELT_THEMES.map(f=>`<button class="swatch${FELT_THEME===f.id?' on':''}" data-felt-id="${f.id}" title="${f.name}">
+          <span class="face" style="background:radial-gradient(ellipse at 50% 35%, ${f.a}, ${f.b} 82%);"></span>
+          <span class="tip"><span class="big" style="background:radial-gradient(ellipse at 50% 35%, ${f.a}, ${f.b} 82%); border-color:var(--gold);"></span><span class="nm">${f.name}</span></span>
+        </button>`).join('')}
+      </div>
+      <div class="swatch-note">Pick the room you want to sit in — it changes nothing about the cards.</div>
 
       <h3 style="margin-top:20px; color:var(--gold-bright);">Saved Progress</h3>
       <div class="muted">Career progress, drill scores, and these audio settings are saved automatically to this browser as you play — closing the tab and coming back later picks up right where you left off. If your browser blocks storage (e.g. private/incognito mode), the trainer still works fine, it just won't remember anything next time.</div>
@@ -5467,10 +6418,12 @@ function wireOptionsEvents(){
   });
   const musicSlider = document.getElementById('musicVolumeSlider');
   if(musicSlider) musicSlider.addEventListener('input', ()=>{ state.audio.music.volume = parseInt(musicSlider.value,10)/100; });
-  const feltSel = document.getElementById('cfgFeltTheme');
-  if(feltSel) feltSel.addEventListener('change', ()=>{ FELT_THEME = feltSel.value; applyThemes(); render(); });
-  const deckSel = document.getElementById('cfgDeckTheme');
-  if(deckSel) deckSel.addEventListener('change', ()=>{ DECK_THEME = deckSel.value; applyThemes(); render(); });
+  document.querySelectorAll('.swatch[data-feltId], .swatch[data-felt-id]').forEach(b=>{
+    b.addEventListener('click', ()=>{ FELT_THEME = b.dataset.feltId; applyThemes(); sfxClick(); render(); });
+  });
+  document.querySelectorAll('.swatch[data-deck-id]').forEach(b=>{
+    b.addEventListener('click', ()=>{ DECK_THEME = b.dataset.deckId; applyThemes(); sfxClick(); render(); });
+  });
   const bind = (id, fn)=>{ const el=document.getElementById(id); if(el) el.addEventListener('click', fn); };
   bind('testDeal', sfxDeal);
   bind('testChip', sfxChip);
@@ -5531,13 +6484,233 @@ function render(){
   }
   checkAchievements();
   renderMain();
+  animateResultAmount();
+  if(state.table) markCardsShown(state.table);
+  requestAnimationFrame(fitPlayLayout);
+  const brand = document.getElementById('hdrBrand');
+  if(brand && !brand._wired){ brand.addEventListener('click', showStart); brand._wired = true; }
   saveProgress();
+}
+
+/* ---------------- WINDOW FIT ----------------
+   The table sizes itself to whatever room is left after the header, the setup strip, the
+   action bar and the log — so the whole Play tab fits one screen with no page scrolling.
+   Measured rather than guessed, because the chrome's height changes with the game state. */
+const TABLE_W = 980, TABLE_H = 612;
+let lastFitScale = 0;
+/* renderMain() replaces the table's DOM wholesale, so a transform applied in a later frame
+   means one painted frame at full 980×612 — a visible flash-and-snap on every AI action.
+   Stamping the cached scale straight into the markup makes the first frame already correct. */
+function tableWrapStyleAttr(){
+  return lastFitScale ? ` style="transform:scale(${lastFitScale.toFixed(3)})"` : '';
+}
+function tableFitStyleAttr(){
+  return lastFitScale ? ` style="height:${Math.round(TABLE_H*lastFitScale)}px"` : '';
+}
+/* The chrome's measured height changes constantly mid-hand — the action row rewraps, the log
+   fills up, pills appear — and re-deriving the scale from it every render made the table
+   visibly jump. Two guards: the log gets a fixed cap instead of a computed one (so it can't
+   feed back into the measurement), and a new scale has to differ by a real amount before it's
+   applied, so ordinary in-hand chatter leaves the table alone. */
+const FIT_HYSTERESIS = 0.05;
+function fitPlayLayout(opts){
+  if(typeof window === 'undefined') return;
+  const wrap = document.querySelector('.table-wrap');
+  const fit = wrap && wrap.parentElement;
+  if(!wrap || !fit) return;
+  if(window.innerWidth <= 480){ wrap.style.transform=''; fit.style.height=''; return; }
+  const box = wrap.closest('.card-box');
+  if(!box) return;
+  const apply = v=>{
+    wrap.style.transform = 'scale(' + v.toFixed(3) + ')';
+    fit.style.height = Math.round(TABLE_H * v) + 'px';
+  };
+  // The chrome has to be measured with the table's own slot collapsed to nothing. Subtracting
+  // the *scaled* fit height instead let the measurement eat its own tail — the smaller the
+  // table got, the bigger "chrome" looked, so the available height walked toward zero and the
+  // scale collapsed to the floor no matter how much room was actually free.
+  const prevH = fit.style.height;
+  fit.style.height = '0px';
+  const boxRect = box.getBoundingClientRect();
+  const chrome = boxRect.height;            // action bar + log + padding, table slot at zero
+  const availH = window.innerHeight - boxRect.top - chrome - 14;
+  const availW = box.clientWidth - 40;
+  fit.style.height = prevH;
+  // 0.62 is the legibility floor — below it seat text stops being readable, so prefer a
+  // little scrolling to an unreadable table
+  let k = Math.max(0.62, Math.min(1, availW / TABLE_W, availH / TABLE_H));
+  const force = !!(opts && opts.force);
+  if(!force && lastFitScale && Math.abs(k - lastFitScale) < FIT_HYSTERESIS){
+    apply(lastFitScale);   // close enough — hold the size we already have
+    return;
+  }
+  apply(k);
+  // …but clipping the fold/call/raise row is worse than small text, so if the tab still
+  // runs past the window after that, give back exactly the overflow (down to 0.4)
+  const overflow = box.getBoundingClientRect().bottom - window.innerHeight + 8;
+  if(overflow > 0 && k > 0.4){
+    const shrunk = Math.max(0.4, k - overflow / TABLE_H);
+    if(shrunk < k){ k = shrunk; apply(k); }
+  }
+  lastFitScale = k;
+}
+if(typeof window !== 'undefined' && window.addEventListener){
+  let fitTimer = null;
+  window.addEventListener('resize', ()=>{
+    clearTimeout(fitTimer);
+    fitTimer = setTimeout(()=>fitPlayLayout({force:true}), 80);
+  });
+}
+
+/* ---------------- CHROME AUTO-HIDE ----------------
+   Five seconds after you land on the table the tab row and the settings strip fold away and
+   the brandmark pulses a few times — that pulse is the whole instruction: hover the logo and
+   they come back. "Pin" in the header opts out entirely. */
+const CHROME_HIDE_DELAY = 5000;
+let chromeHideTimer = null;
+let chromePeekTimer = null;
+function chromeShouldAutoHide(){
+  return !state.ui.pinChrome && state.activeTab === 'play' && window.innerWidth > 480;
+}
+function setChromeHidden(hidden){
+  const root = document.documentElement;
+  if(hidden) root.setAttribute('data-chrome-hidden','1');
+  else { root.removeAttribute('data-chrome-hidden'); root.removeAttribute('data-chrome-peek'); }
+  // the rows animate for 300ms — measuring before that finishes reads the old height, which
+  // is why the table used to keep its small scale after the tabs rolled away
+  const force = ()=>fitPlayLayout({force:true});
+  requestAnimationFrame(force);
+  setTimeout(force, 180);
+  setTimeout(force, 340);
+}
+function scheduleChromeHide(){
+  clearTimeout(chromeHideTimer);
+  if(!chromeShouldAutoHide()){ setChromeHidden(false); return; }
+  if(document.documentElement.hasAttribute('data-chrome-hidden')) return; // already away
+  chromeHideTimer = setTimeout(()=>{
+    if(chromeShouldAutoHide()) setChromeHidden(true);
+  }, CHROME_HIDE_DELAY);
+}
+function applyChromePin(){
+  const btn = document.getElementById('hdrTabsBtn');
+  if(btn){
+    btn.textContent = state.ui.pinChrome ? 'Pinned ⌄' : 'Pin ⌃';
+    btn.title = state.ui.pinChrome
+      ? 'Controls stay on screen — click to let them auto-hide again'
+      : 'Keep the controls on screen instead of letting them auto-hide';
+  }
+  if(state.ui.pinChrome){ clearTimeout(chromeHideTimer); setChromeHidden(false); }
+  else scheduleChromeHide();
+}
+function wireChrome(){
+  const brand = document.getElementById('hdrBrand');
+  const nav = document.getElementById('tabBar');
+  const header = document.querySelector('header');
+  /* Once the row is open it has to STAY open while you aim at it. mouseleave alone was
+     hopeless: the row animates in under the moving cursor, and any moment the pointer spent
+     between the logo and a tab started a 320ms countdown to collapse. So opening is driven by
+     hover, but closing is driven by where the pointer actually is — it only rolls away once
+     you've moved clearly below the whole header block, with a grace margin. */
+  const peek = on=>{
+    const root = document.documentElement;
+    const force = ()=>fitPlayLayout({force:true});
+    if(on){
+      clearTimeout(chromePeekTimer);
+      root.setAttribute('data-chrome-peek','1');
+      requestAnimationFrame(force); setTimeout(force, 340);
+    } else {
+      chromePeekTimer = setTimeout(()=>{
+        root.removeAttribute('data-chrome-peek');
+        force(); setTimeout(force, 340);
+      }, 260);
+    }
+  };
+  [brand, nav, header].forEach(el=>{
+    if(!el) return;
+    el.addEventListener('mouseenter', ()=>peek(true));
+  });
+  document.addEventListener('mousemove', e=>{
+    const root = document.documentElement;
+    if(!root.hasAttribute('data-chrome-hidden')) return;
+    if(!root.hasAttribute('data-chrome-peek')) return;
+    const zone = header ? header.getBoundingClientRect() : null;
+    if(!zone) return;
+    const navBox = nav ? nav.getBoundingClientRect() : null;
+    const bottom = Math.max(zone.bottom, navBox ? navBox.bottom : 0) + 90; // grace margin
+    if(e.clientY > bottom) peek(false);
+    else clearTimeout(chromePeekTimer);
+  });
+  if(brand) brand.addEventListener('focus', ()=>peek(true));
+  const btn = document.getElementById('hdrTabsBtn');
+  if(btn) btn.addEventListener('click', ()=>{
+    state.ui.pinChrome = !state.ui.pinChrome;
+    sfxClick();
+    applyChromePin();
+    saveProgress();
+  });
+  applyChromePin();
+}
+
+/* ---------------- START SCREEN ---------------- */
+function dismissStart(){ document.documentElement.setAttribute('data-skip-start','1'); }
+function showStart(){ document.documentElement.removeAttribute('data-skip-start'); refreshStartState(); }
+function refreshStartState(){
+  const el = document.getElementById('ssState');
+  if(!el) return;
+  const graded = (typeof totalDrillAttempts==='function') ? totalDrillAttempts(state) : 0;
+  const correct = (typeof totalDrillScore==='function') ? totalDrillScore(state) : 0;
+  const hasSave = (()=>{ try{ return !!localStorage.getItem(SAVE_KEY); }catch(err){ return false; } })();
+  const cont = document.getElementById('ssContinue');
+  if(!hasSave){
+    el.innerHTML = 'No saved progress on this device yet &mdash; New Game starts you clean.';
+    if(cont) cont.disabled = true;
+    return;
+  }
+  if(cont) cont.disabled = false;
+  const pct = graded ? Math.round((correct/graded)*100) : 0;
+  // Be precise about this: skills, career and achievements persist; a table or tournament
+  // mid-flight does not. Calling it "Continue Saved Game" implied a resumable hand.
+  const tier = state.career && typeof state.career.tier==='number' ? state.career.tier+1 : 1;
+  const head = graded
+    ? (correct
+        ? `Saved progress found: <b>${graded}</b> graded decisions at <b>${pct}%</b>, career tier <b>${tier}</b>.`
+        : `Saved progress found: <b>${graded}</b> graded decisions, career tier <b>${tier}</b>.`)
+    : 'Saved progress found on this device.';
+  const resumeBtn = document.getElementById('ssResume');
+  const summary = sessionSummary(pendingSession);
+  if(resumeBtn) resumeBtn.style.display = summary ? '' : 'none';
+  el.innerHTML = summary
+    ? head + `<br>A table is still in progress: <b>${summary}</b>. Resume Table picks it up exactly where you left it.`
+    : head + '<br>Drill scores, career and achievements carry over. No table is currently in progress.';
+}
+function wireStartScreen(){
+  const on = (id, fn)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', e=>{ e.preventDefault(); fn(); }); };
+  on('ssNew', ()=>{ state.table = null; state.mtt = null; pendingSession = null; dismissStart(); switchTab('play'); saveProgress(); });
+  on('ssContinue', ()=>{ dismissStart(); switchTab('play'); });
+  on('ssResume', ()=>{ dismissStart(); switchTab(pendingSession && pendingSession.activeTab === 'play' ? 'play' : 'play'); resumeSession(); });
+  on('ssOptions', ()=>{ dismissStart(); switchTab('options'); });
+  on('ssManual', ()=>{ dismissStart(); switchTab('manual'); });
+  const ver = document.getElementById('ssVer');
+  if(ver) ver.textContent = APP_VERSION;
+  document.addEventListener('keydown', e=>{
+    if(document.documentElement.hasAttribute('data-skip-start')) return;
+    if(e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
+    const k = e.key.toLowerCase();
+    if(k==='n'){ e.preventDefault(); document.getElementById('ssNew').click(); }
+    else if(k==='c'){ e.preventDefault(); document.getElementById('ssContinue').click(); }
+    else if(k==='r'){ const r=document.getElementById('ssResume'); if(r && r.style.display!=='none'){ e.preventDefault(); r.click(); } }
+    else if(k==='l'){ e.preventDefault(); document.getElementById('ssOptions').click(); }
+    else if(k==='enter' || k===' '){ e.preventDefault(); document.getElementById('ssNew').click(); }
+  });
+  refreshStartState();
 }
 
 /* ---------------- INIT ---------------- */
 loadProgress();
 renderTabBar();
 render();
+wireStartScreen();
+wireChrome();
 if(typeof document !== 'undefined' && document.addEventListener){
   document.addEventListener('keydown', handlePlayKeydown);
   document.addEventListener('keydown', handleGlobalKeydown);

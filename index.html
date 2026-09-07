@@ -4,113 +4,210 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Hold'em Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap');
+  /* Palette, type and table treatment are shared verbatim with both trainers — this page is
+     the front door to the same room, so nothing here is invented locally. */
   :root{
-    --bg:#0c1f15; --panel:#153724; --panel-line:rgba(217,197,140,0.18);
-    --gold:#c9a227; --gold-bright:#e8c14f; --cream:#f1e9d8; --cream-dim:#c9c2ac;
+    --felt-1:#0d2a1e; --felt-2:#153b29;
+    --panel:#123423; --panel-2:#1a4530; --panel-line:#2c5a41;
+    --gold:#c9a227; --gold-bright:#e8c14f; --cream:#f2ead3; --cream-dim:#cfc6ab;
     --red:#a13d2c;
   }
   *{box-sizing:border-box;}
+  html,body{overflow-x:hidden;}
   body{
-    margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+    margin:0; min-height:100dvh; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:clamp(12px,2.2vh,26px);
     background:
-      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(232,193,79,0.07), transparent 60%),
-      var(--bg);
+      radial-gradient(ellipse at 50% -10%, #1c4a33 0%, transparent 60%),
+      linear-gradient(180deg, var(--felt-1), var(--felt-2) 60%, #0a1f16 100%);
+    background-attachment:fixed;
     color:var(--cream); font-family:'Inter',sans-serif;
-    padding:24px;
+    padding:clamp(12px,2.4vh,30px) clamp(14px,3vw,32px);
   }
-  .wrap{max-width:640px; text-align:center;}
+  a{color:var(--gold-bright); text-decoration:none;}
+  a:hover{color:var(--cream); text-decoration:underline;}
 
-  /* ---- exact copy of the in-app header logo, for visual consistency across the series ---- */
-  .brand{display:inline-flex; align-items:center; gap:14px; text-decoration:none; color:inherit; margin-bottom:8px;}
-  .hdr-fan{position:relative; flex:0 0 auto; width:74px; height:74px; transform:rotate(-20deg);}
-  .hdr-fan .court{position:absolute; left:12%; top:6%; width:42px; height:59px; border-radius:5px;}
-  .hdr-fan .court.a{transform:rotate(9deg) translateX(12%); z-index:2;}
-  .hdr-fan .court.b{transform:rotate(-21deg) translateX(-34%);}
+  /* the same wooden rail and felt bed the trainers' tables use */
+  .hero{
+    width:100%; max-width:min(860px, 92vw); position:relative; padding:4.4%;
+    border-radius:50% / 42%;
+    background:linear-gradient(168deg,#8a6236 0%,#4a3018 38%,#2f1d0e 62%,#7a5530 100%);
+    box-shadow:0 26px 50px rgba(0,0,0,0.55), inset 0 2px 0 rgba(255,255,255,0.20), inset 0 -3px 6px rgba(0,0,0,0.5);
+  }
+  .felt{
+    border-radius:50% / 42%; text-align:center;
+    padding:clamp(20px,3.6vh,54px) clamp(28px,7vw,100px) clamp(22px,4vh,56px);
+    background:
+      radial-gradient(ellipse 90% 70% at 50% 8%, rgba(255,255,255,0.10), transparent 60%),
+      radial-gradient(ellipse 120% 90% at 50% 108%, rgba(0,0,0,0.55), transparent 62%),
+      repeating-linear-gradient(135deg, rgba(255,255,255,0.014) 0 2px, transparent 2px 5px),
+      repeating-linear-gradient(45deg, rgba(0,0,0,0.02) 0 2px, transparent 2px 5px),
+      linear-gradient(180deg, #145034 0%, #0f3d29 55%, #092a1b 100%);
+    box-shadow:inset 0 0 0 2px rgba(0,0,0,0.45), inset 0 0 34px rgba(0,0,0,0.55), inset 0 3px 10px rgba(0,0,0,0.4);
+  }
+
+  /* the brandmark, identical to the one hanging in each trainer's header */
+  .brand{
+    --name-size:clamp(2.2rem, min(6.4vw, 13vh), 5rem);
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    margin-bottom:clamp(10px,2vw,18px);
+  }
+  .fan{
+    position:relative; flex:0 0 auto; font-size:var(--name-size);
+    transform:rotate(-22deg) scale(0.92); width:1.35em; height:1.5em;
+  }
   .court{
-    position:relative; flex:0 0 auto; overflow:hidden;
+    position:absolute; left:10%; top:6%; width:1.16em; height:1.62em;
+    border-radius:0.075em; overflow:hidden;
     background:linear-gradient(158deg,#fffdf7,#f1e9d5);
     box-shadow:0 8px 20px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(0,0,0,0.16);
     color:#1c1c1c; transform-origin:82% 100%;
   }
   .court.red{color:var(--red);}
-  .court::before{
-    content:''; position:absolute; inset:8%; border:1.5px solid currentColor;
-    opacity:0.4; border-radius:2px;
-  }
+  .court::before{content:''; position:absolute; inset:8%; border:1.5px solid currentColor; opacity:0.4; border-radius:0.03em;}
+  .court.a{transform:rotate(6deg) translateX(7%); z-index:2;}
+  .court.b{transform:rotate(-12deg) translateX(-19%);}
   .court .ix{
-    position:absolute; top:5%; left:8%; display:flex; flex-direction:column;
-    align-items:center; line-height:0.82; font-family:'Playfair Display', serif;
-    font-weight:700; letter-spacing:-0.02em; font-size:13px;
+    position:absolute; top:5%; left:8%; display:flex; flex-direction:column; align-items:center;
+    line-height:0.82; font-family:'Playfair Display',serif; font-weight:700;
+    letter-spacing:-0.02em; font-size:0.31em;
   }
   .court .ix .su{font-size:0.76em;}
-  .court .pip{
-    position:absolute; left:50%; top:52%; transform:translate(-50%,-50%);
-    line-height:1; font-size:23px;
+  .court .pip{position:absolute; left:50%; top:52%; transform:translate(-50%,-50%); line-height:1; font-size:0.6em;}
+  .wordmark{text-align:left;}
+  .wordmark .name{
+    font-family:'Playfair Display',serif; font-weight:900; font-size:var(--name-size);
+    line-height:0.9; letter-spacing:-0.015em; color:var(--cream);
+    text-shadow:0 3px 0 rgba(0,0,0,0.35);
   }
-  .hdr-word{display:flex; flex-direction:column; align-items:flex-start;}
-  h1.hdr-name{
-    font-family:'Playfair Display', serif; font-weight:900; font-size:2.1rem;
-    line-height:1; letter-spacing:-0.015em; color:var(--cream); margin:0;
+  .wordmark .name span{color:var(--gold-bright);}
+  .wordmark .sub{
+    font-family:'JetBrains Mono',monospace; font-size:clamp(0.6rem,1.1vw,0.82rem);
+    letter-spacing:0.3em; text-transform:uppercase; color:var(--gold-bright);
+    margin-top:10px; padding-left:clamp(10px,2.6vw,40px);
+    text-shadow:0 1px 0 rgba(0,0,0,0.9), 0 2px 6px rgba(0,0,0,0.8);
   }
-  h1.hdr-name > span:first-child{color:var(--gold-bright);}
-  .hdr-sub{
-    font-family:'JetBrains Mono', monospace; font-size:0.68rem; letter-spacing:0.34em;
-    text-transform:uppercase; color:rgba(233,215,160,0.7); margin-top:8px;
+  @media (max-width:600px){
+    .brand{flex-direction:column; gap:12px;}
+    .wordmark{text-align:center;}
+    .wordmark .sub{padding-left:0; letter-spacing:0.22em;}
   }
-  /* ---- end ported header logo ---- */
 
-  .tagline{font-size:0.78rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--cream-dim); margin:20px 0 28px;}
-  .pitch{font-size:1.05rem; line-height:1.65; color:var(--cream); margin-bottom:36px;}
-  .pitch b{color:var(--gold-bright); font-weight:600;}
-  .actions{display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin-bottom:20px;}
+  h2.pitch-h{font-family:'Fraunces',serif; font-weight:600; font-size:clamp(1.2rem,2.6vw,1.7rem); line-height:1.18; margin:0;}
+  h2.pitch-h em{font-style:normal; color:var(--gold-bright);}
+  .pitch{max-width:56ch; margin:clamp(12px,2.2vw,18px) auto 0; font-size:clamp(0.9rem,1.4vw,1.02rem); line-height:1.6; text-wrap:pretty;}
+  .pitch b{color:var(--gold-bright); font-weight:700;}
+  .actions{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:clamp(18px,2.8vw,26px);}
   .btn{
-    display:inline-flex; align-items:center; gap:10px; font-family:'Inter',sans-serif;
-    font-size:1rem; font-weight:600; text-decoration:none; padding:16px 30px;
-    border-radius:14px; transition:0.15s; border:1px solid var(--panel-line);
+    display:inline-flex; align-items:center; gap:8px; font-weight:600; font-size:0.92rem;
+    padding:14px 26px; border-radius:12px; border:1px solid var(--panel-line);
+    background:var(--panel); color:var(--cream); text-decoration:none;
+    transition:transform 0.08s ease, background 0.15s, border-color 0.15s, color 0.15s;
   }
+  .btn:hover{background:#1a4530; color:var(--cream); text-decoration:none; transform:translateY(-1px);}
   .btn.primary{background:var(--gold); color:#20200c; border-color:var(--gold-bright);}
-  .btn.primary:hover{background:var(--gold-bright); transform:translateY(-1px);}
-  .btn.secondary{background:var(--panel); color:var(--cream);}
-  .btn.secondary:hover{border-color:var(--gold); color:var(--gold-bright);}
-  .skills{
-    display:flex; gap:10px; justify-content:center; flex-wrap:wrap;
-    margin-top:8px; font-size:0.78rem; color:var(--cream-dim);
+  .btn.primary:hover{background:var(--gold-bright); color:#20200c;}
+  .skills{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:20px; font-size:0.74rem; color:var(--cream-dim);}
+  .skills span{background:rgba(0,0,0,0.24); border:1px solid var(--panel-line); border-radius:20px; padding:6px 13px;}
+
+  /* ---- the series rail: the shared front door between every trainer in the set ----
+     Each game lives in its own repository, so on GitHub Pages they sit as siblings under
+     the same user domain — which is why these hrefs are "../<repo-slug>/". Adding the next
+     game means adding one <a> (or flipping a .soon card into a link). */
+  .series{
+    width:100%; max-width:860px; display:grid; gap:10px;
+    grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
   }
-  .skills span{background:var(--panel); border:1px solid var(--panel-line); border-radius:20px; padding:6px 14px;}
-  .series-note{margin-top:32px; font-size:0.74rem; color:var(--cream-dim); line-height:1.6;}
-  .series-note a{color:var(--gold-bright); text-decoration:none;}
-  .series-note a:hover{text-decoration:underline;}
+  .series-label{
+    grid-column:1/-1; text-align:center; font-family:'JetBrains Mono',monospace;
+    font-size:0.6rem; letter-spacing:0.3em; text-transform:uppercase; color:rgba(233,215,160,0.45);
+    margin-bottom:2px;
+  }
+  .game{
+    display:flex; flex-direction:column; gap:3px; padding:14px 16px;
+    background:var(--panel); border:1px solid var(--panel-line); border-radius:14px;
+    color:var(--cream); text-decoration:none;
+    transition:transform 0.08s ease, background 0.15s, border-color 0.15s;
+  }
+  .game:hover{background:var(--panel-2); border-color:var(--gold); color:var(--cream); text-decoration:none; transform:translateY(-1px);}
+  .game .gname{font-family:'Fraunces',serif; font-weight:600; font-size:1rem;}
+  .game .gsub{font-family:'JetBrains Mono',monospace; font-size:0.6rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--cream-dim);}
+  .game.here{border-color:var(--gold); background:var(--panel-2);}
+  .game.here .gname{color:var(--gold-bright);}
+  .game.soon{opacity:0.42; pointer-events:none;}
+  .foot{
+    max-width:860px; text-align:center; font-family:'JetBrains Mono',monospace;
+    font-size:0.68rem; color:var(--cream-dim); line-height:1.7;
+  }
+  /* The page is a front door, not a document — it should never need scrolling. On shorter
+     windows the optional furniture goes before the type does: skill chips first, then the
+     footer, then the pitch tightens. */
+  @media (max-height:780px){
+    .skills{display:none;}
+    .brand{--name-size:clamp(1.9rem, min(5.4vw, 11vh), 3.6rem);}
+  }
+  @media (max-height:660px){
+    .foot{display:none;}
+    .pitch{font-size:0.86rem; line-height:1.5; max-width:62ch;}
+    /* the table stays a table — tighten the padding, never square off the rail */
+    .hero{padding:3.4%;}
+    .felt{padding:18px clamp(30px,7vw,80px) 20px;}
+    .btn{padding:11px 20px; font-size:0.86rem;}
+  }
+  @media (max-height:540px){
+    .pitch{display:none;}
+    .series-label{display:none;}
+    .game{padding:10px 13px;}
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <span class="brand">
-    <span class="hdr-fan" aria-hidden="true">
-      <span class="court a"><span class="ix">A<span class="su">&#9824;</span></span><span class="pip">&#9824;</span></span>
-      <span class="court b red"><span class="ix">K<span class="su">&#9829;</span></span><span class="pip">&#9829;</span></span>
-    </span>
-    <span class="hdr-word">
-      <h1 class="hdr-name">Hold<span>'em</span></h1>
-      <span class="hdr-sub">Probability &amp; Bluffing Trainer</span>
-    </span>
-  </span>
-  <div class="tagline">A full-stakes Texas Hold'em trainer</div>
-  <p class="pitch">Learn to play real casino Hold'em the way a serious player actually does — <b>pot odds</b>, <b>position</b>, <b>range reading</b>, and <b>balanced bluffing</b>, against AI that plays real ranges and real equity, not scripted patterns. Then take it into <b>Tournaments</b>, a full <b>Career</b> with real stakes, and every major casino variant: <b>Pot-Limit</b>, <b>Limit</b>, and <b>Short-Deck (6+)</b>.</p>
-  <div class="actions">
-    <a class="btn primary" href="./holdem-trainer.html">🃏 Play the Trainer</a>
-    <a class="btn secondary" href="./Holdem-trainer-manual.html">📖 Read the Manual</a>
+<div class="hero">
+  <div class="felt">
+    <div class="brand">
+      <span class="fan" aria-hidden="true">
+        <span class="court a"><span class="ix">A<span class="su">&#9824;</span></span><span class="pip">&#9824;</span></span>
+        <span class="court b red"><span class="ix">K<span class="su">&#9829;</span></span><span class="pip">&#9829;</span></span>
+      </span>
+      <span class="wordmark">
+        <span class="name">Hold<span>'em</span> Trainer</span>
+        <span class="sub">Probability &amp; Bluffing</span>
+      </span>
+    </div>
+    <h2 class="pitch-h">Learn the odds<br><em>before you post a blind</em></h2>
+    <p class="pitch">Poker isn't hard because the maths is hard &mdash; <b>it's hard because you have thirty seconds, nine opponents, and no calculator</b>. This trainer drills all three: pot odds you can price in your head, ranges you can read from the action, and a bet you can size on purpose. Then take it into <b>Tournaments</b>, a full <b>Career</b>, and every casino variant &mdash; Pot-Limit, Limit, and Short-Deck.</p>
+    <div class="actions"><a class="btn primary" href="./holdem-trainer.html">Play the Trainer</a>
+      <a class="btn" href="./Holdem-trainer-manual.html">Read the Manual</a>
+      <a class="btn" href="./changelog.html">Changelog</a></div>
+    <div class="skills"><span>Pot Odds &amp; Equity</span>
+      <span>Preflop Position</span>
+      <span>Range Reading</span>
+      <span>Bet Sizing &amp; Bluffing</span>
+      <span>Tournaments &amp; Career</span>
+      <span>Hold’em Variants</span></div>
   </div>
-  <div class="skills">
-    <span>Pot Odds &amp; Equity</span>
-    <span>Preflop Position</span>
-    <span>Range Reading</span>
-    <span>Bet Sizing &amp; Bluffing</span>
-    <span>Tournaments &amp; Career</span>
-    <span>Hold'em Variants</span>
-  </div>
-  <div class="series-note">Part of a small series of casino card-game trainers — if you came from the Blackjack Counting Trainer, the theme, conventions, and testing discipline carry over on purpose.</div>
 </div>
+
+<nav class="series">
+  <div class="series-label">The Series</div>
+  <a class="game here" href="./index.html">
+    <span class="gname">Hold'em Trainer</span>
+    <span class="gsub">Probability &amp; Bluffing &middot; You are here</span>
+  </a>
+  <a class="game" href="../Blackjack.trainer/">
+    <span class="gname">Blackjack Trainer</span>
+    <span class="gsub">Card Counting &amp; Camouflage</span>
+  </a>
+  <span class="game soon">
+    <span class="gname">More to come</span>
+    <span class="gsub">Further casino trainers in development</span>
+  </span>
+</nav>
+
+<footer class="foot">Practice only. Play for money at your own risk; the house always charges rake.<br>
+  Part of a series of casino trainers built to the same standard &mdash; shared table, type, sound and testing discipline, on purpose.</footer>
 </body>
 </html>
