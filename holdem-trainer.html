@@ -290,7 +290,38 @@
   .seat.active-turn{border-color:var(--gold-bright); animation:seatPulse 1.6s ease-in-out infinite; z-index:5;}
   .seat.folded{opacity:0.35;}
   .seat .name{font-weight:600; font-size:0.82rem;}
-  .seat .stack{font-family:'JetBrains Mono',monospace; font-size:0.72rem; color:var(--cream-dim);}
+  .seat{position:relative;}
+  .seat .stack{font-family:'JetBrains Mono',monospace; font-size:0.72rem; color:var(--cream-dim); display:inline-block; transform-origin:center;}
+  .seat .stack.br-up{color:#7fd6a2;}
+  .seat .stack.br-down{color:#e79a9a;}
+  @keyframes moneySwell{
+    0%{transform:scale(1);}
+    18%{transform:scale(1.42); text-shadow:0 0 18px rgba(127,214,162,0.9), 0 2px 0 #000;}
+    55%{transform:scale(1.12); text-shadow:0 0 12px rgba(127,214,162,0.5);}
+    100%{transform:scale(1); text-shadow:none;}
+  }
+  @keyframes moneyShake{
+    0%{transform:scale(1) translateX(0);}
+    12%{transform:scale(1.24) translateX(-3px); text-shadow:0 0 16px rgba(231,154,154,0.85), 0 2px 0 #000;}
+    28%{transform:scale(1.18) translateX(3px);}
+    44%{transform:scale(1.1) translateX(-2px);}
+    62%{transform:scale(1.04) translateX(1px);}
+    100%{transform:scale(1) translateX(0); text-shadow:none;}
+  }
+  .money-delta{
+    position:absolute; left:50%; bottom:100%; z-index:60; pointer-events:none;
+    font-family:'JetBrains Mono',monospace; font-weight:700; font-size:1rem;
+    text-shadow:0 2px 0 #000, 0 0 14px currentColor;
+    animation:deltaFly 1.25s cubic-bezier(.15,.85,.3,1) both;
+  }
+  .money-delta.up{color:#7fd6a2;}
+  .money-delta.down{color:#e79a9a;}
+  @keyframes deltaFly{
+    0%{opacity:0; transform:translate(-50%,10px) scale(0.6);}
+    16%{opacity:1; transform:translate(-50%,-2px) scale(1.24);}
+    34%{transform:translate(-50%,-10px) scale(1);}
+    100%{opacity:0; transform:translate(-50%,-46px) scale(0.94);}
+  }
   .seat .bet-tag{font-family:'JetBrains Mono',monospace; font-size:0.7rem; color:var(--gold-bright); margin-top:3px; display:flex; align-items:center; justify-content:center; gap:5px;}
   .seat .dealer-btn{
     position:absolute; top:-9px; right:-9px; width:22px; height:22px; border-radius:50%;
@@ -783,12 +814,12 @@
       </div>
     </div>
     <footer class="start-foot">
-      <span id="ssVer">v0.55.1</span> &middot; <a href="#" id="ssManual">Manual &amp; how saving works</a> &middot; <a href="./index.html">Front door</a><br>
+      <span id="ssVer">v0.56.0</span> &middot; <a href="#" id="ssManual">Manual &amp; how saving works</a> &middot; <a href="./index.html">Front door</a><br>
       Practice only. Play for money at your own risk; the house always charges rake.
       <div class="series-rail">
         <span class="series-here">Hold&rsquo;em Trainer</span>
-        <a href="../Blackjack.trainer/">Blackjack Trainer</a>
-        <a href="../Baccarat.trainer/">Baccarat Trainer</a>
+        <a href="https://wilwash3r3.github.io/Blackjack.trainer/">Blackjack Trainer</a>
+        <a href="https://wilwash3r3.github.io/Baccarat-trainer/">Baccarat Trainer</a>
       </div>
     </footer>
   </div>
@@ -824,7 +855,7 @@
    Ported visual theme (palette / fonts / card-fan logo) from
    the Blackjack Counting Trainer for brand consistency.
    ========================================================= */
-const APP_VERSION = "v0.55.1";
+const APP_VERSION = "v0.56.0";
 
 /* ---------------- TAB DEFINITIONS ---------------- */
 const TABS = [
@@ -2792,8 +2823,32 @@ function startStackAnimation(t, playerId, from, to){
   if(from===to) return;
   t.animatingStacks = t.animatingStacks || {};
   const alreadyRunning = Object.keys(t.animatingStacks).length>0;
-  t.animatingStacks[playerId] = {from, to, start: Date.now(), duration: 700};
+  t.animatingStacks[playerId] = {from, to, start: Date.now(), duration: 1250};
   if(!alreadyRunning) tickStackAnimations(t);
+}
+/* how a stack should look mid-move: tinted, and swelling on a curve that survives
+   the seat being rebuilt underneath it every frame */
+function stackMoveAttrs(t, p){
+  const a = t.animatingStacks && t.animatingStacks[p.id];
+  if(!a || a.to === a.from) return {cls:'', style:''};
+  const up = a.to > a.from;
+  const f = Math.min(1, Math.max(0, (Date.now() - a.start) / a.duration));
+  // a quick pop to 1.4 then an ease back to rest, matching the CSS the other trainers use
+  const swell = f < 0.18 ? 1 + (f/0.18)*0.42 : 1 + 0.42*Math.pow(1-(f-0.18)/0.82, 2.2);
+  const wobble = up ? 0 : Math.sin(f*26)*3*(1-f);
+  const glow = (1-f)*0.9;
+  return {
+    cls: up ? ' br-up' : ' br-down',
+    style: ` style="transform:scale(${swell.toFixed(3)}) translateX(${wobble.toFixed(1)}px); text-shadow:0 0 ${(glow*18).toFixed(0)}px ${up?'rgba(127,214,162,':'rgba(231,154,154,'}${glow.toFixed(2)}), 0 2px 0 #000;"`
+  };
+}
+/* The badge that leaps off a stack when money moves. Seats re-render on every frame of the
+   roll, so this is markup rather than an appended node — otherwise each render wipes it. */
+function moneyDeltaHTML(t, p){
+  const a = t.animatingStacks && t.animatingStacks[p.id];
+  if(!a || a.to === a.from) return '';
+  const d = a.to - a.from;
+  return `<div class="money-delta ${d>0?'up':'down'}">${d>0?'+$':'\u2212$'}${Math.abs(Math.round(d))}</div>`;
 }
 function tickStackAnimations(t){
   if(typeof window === 'undefined' || !window.setTimeout){ t.animatingStacks = {}; return; }
@@ -2813,8 +2868,7 @@ function tickStackAnimations(t){
 function displayStackFor(t, p){
   const a = t.animatingStacks && t.animatingStacks[p.id];
   if(!a) return p.stack;
-  const now = (typeof performance!=='undefined'?performance.now():Date.now());
-  const frac = Math.min(1, (now - a.start) / a.duration);
+  const frac = Math.min(1, Math.max(0, (Date.now() - a.start) / a.duration));
   const eased = 1 - Math.pow(1-frac, 3);
   return Math.round(a.from + (a.to - a.from) * eased);
 }
@@ -3847,14 +3901,16 @@ function renderPlay(){
   const seatsHTML = list.map((p,i)=>{
     const pos = seatPosition(i, list.length);
     const isDealer = i===t.dealerIdx;
+    const stackMove = stackMoveAttrs(t, p);
     const showCards = p.isHuman || t.stage==='showdown';
     const cardsHTML = p.folded ? '' : `<div class="cards${showCards?' zoom-group':''}">${
       p.holeCards.map((c,ci)=> showCards ? cardHTML(c,{size:'sm', fresh:freshHole(t,p,ci)}) : cardHTML(null,{size:'sm', fresh:freshHole(t,p,ci)})).join('') + (showCards ? zoomGroupHTML(p.holeCards, {down: parseFloat(pos.top) < 34}) : '')
     }</div>`;
-    return `<div class="seat${p.id===t.actingIdx?' active-turn':''}${p.folded?' folded':''}" style="left:${pos.left}; top:${pos.top};">
+    return `<div class="seat${p.id===t.actingIdx?' active-turn':''}${p.folded?' folded':''}" data-seat="${p.id}" style="left:${pos.left}; top:${pos.top};">
       ${isDealer?'<div class="dealer-btn" title="Dealer button — this seat acts last after the flop this hand, the biggest positional advantage at the table">D</div>':''}
       <div class="name">${p.name}${p.isHuman?' (you)':''}</div>
-      <div class="stack">$${displayStackFor(t,p)}</div>
+      <div class="stack${stackMove.cls}"${stackMove.style}>$${displayStackFor(t,p)}</div>
+      ${moneyDeltaHTML(t,p)}
       ${p.speech && p.speech.until > Date.now() ? `<div class="seat-bubble">${p.speech.text}</div>` : ''}
       ${p.currentBet>0?`<div class="bet-tag">${chipStackHTML(p.currentBet)}$${p.currentBet}</div>`:''}
       ${cardsHTML}
@@ -6523,7 +6579,8 @@ function renderManual(){
       <details class="man-sec">
         <summary>📜 Version History</summary>
         <div class="muted" style="line-height:1.7;">
-          <div><b>v0.55.1</b> — Two fixes. <b>Busting now happens in the right order</b>, matching the Blackjack trainer: the losing hand finishes being a losing hand first &mdash; verdict toast, sting, your stack rolling down in red &mdash; and only then does the Out of Chips screen appear. It used to replace the whole view the instant the pot was awarded, so you never got to see the hand you lost. And a <b>three-digit raise no longer breaks the action row</b>: the min/max line had a nowrap flex-basis of 100%, so its width still counted toward the sizer's intrinsic size and a figure like $139 pushed the whole row onto a second line. It's now positioned out of flow, where it cannot affect the layout at all, and the input field is a little wider.</div>
+          <div><b>v0.56.0</b> — <b>The money move now lands.</b> Every trainer in the series shares one treatment: the figure swells and settles (or shakes, on a loss), tinted green or red, and a delta badge is thrown up out of the stack that changed. Two real bugs surfaced doing it. The stack roll was reading <code>performance.now()</code> against a <code>Date.now()</code> start &mdash; the two clocks differ by the page's whole epoch, so the eased fraction blew up and stacks briefly printed as <code>-4.17e+30</code>. And because seats rebuild on every frame of a roll, a CSS keyframe on the stack restarted each frame and never got past its first 40ms; the swell is now computed from the tween's own progress and written inline, so it survives re-rendering.</div>
+          <div style="margin-top:8px;"><b>v0.55.1</b> — Two fixes. <b>Busting now happens in the right order</b>, matching the Blackjack trainer: the losing hand finishes being a losing hand first &mdash; verdict toast, sting, your stack rolling down in red &mdash; and only then does the Out of Chips screen appear. It used to replace the whole view the instant the pot was awarded, so you never got to see the hand you lost. And a <b>three-digit raise no longer breaks the action row</b>: the min/max line had a nowrap flex-basis of 100%, so its width still counted toward the sizer's intrinsic size and a figure like $139 pushed the whole row onto a second line. It's now positioned out of flow, where it cannot affect the layout at all, and the input field is a little wider.</div>
           <div style="margin-top:8px;"><b>v0.55.0</b> — Four fixes. <b>Continue</b> now actually continues: if a table is in progress it picks it up, instead of dropping you on Table Setup — "Continue" reading as "go to setup" was simply wrong from your side. <b>Cash games can be left.</b> A new <b>Change Table</b> button beside Restart returns you to setup, because picking your chips up between hands is a cash-game right; tournaments and career events deliberately don't offer it, since being unable to walk away from a bad spot is what a freezeout <i>is</i>. <b>The table now has a maximum.</b> Your starting stack doubles as the buy-in cap, and — the part that actually matters — any AI who runs past about two and a half buy-ins racks up and leaves, with a new player sitting down for the cap. Without that, one seat quietly accumulates a stack nobody could ever win, which makes the deep-stack decisions this trainer teaches meaningless. And the <b>custom raise is fully keyboard-driven</b>: <code>&minus;</code>/<code>+</code> step by a big blind, <code>R</code> commits, <code>6</code>/<code>N</code> still jumps into the field to type a figure.</div>
           <div style="margin-top:8px;"><b>v0.54.1</b> — The action row genuinely scales now instead of breaking at a fixed width. It was never too big &mdash; its <i>labels</i> were: "Raise ½ Pot ($5)" and a spelled-out "costs you $6 &middot; min $4 &middot; max $200" carried about 400px of text that the standard poker terms say in a third of the space. The presets read <b>½ Pot</b>, <b>Pot</b> and <b>All-In</b> (with the long version on hover), the sizer's bounds compress to "$4&ndash;$200 &middot; costs $6", and every control sizes on <code>clamp()</code> so the row shrinks with the window. It now holds one line down to about 760px, where it finally wraps rather than cramming.</div>
           <div style="margin-top:8px;"><b>v0.54.0</b> — <b>Busting a cash table now tells you what happened before it offers you more chips.</b> The old screen went straight to "add $200" with no account of the session at all. It now leads with the numbers — hands, win rate, showdown win rate, biggest pot won, net — and then a few reads inferred from <i>this</i> session rather than canned advice: winning lots of small pots and still going broke is named as winning small and losing big; a low showdown win rate is named as paying to see cards you were behind to; a high one with a bust is named as chips leaving before the showdown. It closes with the honest point, which is that a 100-big-blind buy-in busts inside a session regardless of how well you played, and this screen cannot tell you it was your fault. Buy In Again and Full Session Stats follow underneath.</div>
